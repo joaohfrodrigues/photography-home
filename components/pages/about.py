@@ -35,7 +35,6 @@ def about_page():
                             NotStr(html_content),  # Render HTML content from markdown
                             cls='markdown-content',
                             style="""
-                                font-family: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
                                 font-size: 1.1rem;
                                 line-height: 1.8;
                                 color: #ccc;

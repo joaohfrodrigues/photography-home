@@ -21,10 +21,11 @@ def create_head(
         "name": "João Rodrigues",
         "url": "https://joaohfrodrigues.com",
         "jobTitle": "Photographer",
-        "description": "Professional photographer specializing in landscape, portrait, and travel photography",
+        "description": "Data Engineer and hobbyist photographer based in Lisbon, Portugal.",
         "sameAs": [
             "https://unsplash.com/@joaohfrodrigues",
-            "https://instagram.com/joaohfrodrigues"
+            "https://instagram.com/joaohfrodrigues",
+            "https://www.linkedin.com/in/joaohfrodrigues/"
         ],
         "image": "https://joaohfrodrigues.com/static/favicons/apple-touch-icon.png"
     }

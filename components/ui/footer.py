@@ -22,6 +22,13 @@ def create_footer():
                     target='_blank',
                     rel='noopener noreferrer',
                 ),
+                Span(' • ', style='margin: 0 0.5rem;'),
+                A(
+                    'LinkedIn',
+                    href='https://www.linkedin.com/in/joaohfrodrigues/',
+                    target='_blank',
+                    rel='noopener noreferrer',
+                ),
             ),
             cls='footer-content',
         ),
