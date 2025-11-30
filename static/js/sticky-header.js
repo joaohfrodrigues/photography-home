@@ -1,46 +1,34 @@
-// Sticky header that compacts on scroll
-console.log('📌 Sticky header script loaded');
+// Navbar scroll effect
+console.log('📌 Navbar scroll effect loaded');
 
-let lastScrollY = 0;
 let ticking = false;
-let isCompact = false;
-let heroHeight = 0;
+let hasScrolled = false;
 
-function updateHeaderState() {
-    const hero = document.querySelector('.hero, #hero');
-    if (!hero) return;
+function updateNavbarState() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
 
     const scrollY = window.scrollY;
+    const threshold = 50; // Add background after 50px scroll
 
-    // Get hero's natural height if not already stored
-    if (!heroHeight) {
-        heroHeight = hero.offsetHeight;
-    }
-
-    // Threshold: compact when scrolled past the hero section
-    const threshold = heroHeight - 100; // Start transition 100px before hero scrolls out
-    const shouldBeCompact = scrollY > threshold;
+    const shouldHaveBackground = scrollY > threshold;
 
     // Only update if state actually changed
-    if (shouldBeCompact !== isCompact) {
-        isCompact = shouldBeCompact;
-        if (isCompact) {
-            hero.classList.add('compact');
-            // Add padding to body to prevent content jump
-            document.body.style.paddingTop = hero.offsetHeight + 'px';
+    if (shouldHaveBackground !== hasScrolled) {
+        hasScrolled = shouldHaveBackground;
+        if (hasScrolled) {
+            navbar.classList.add('scrolled');
         } else {
-            hero.classList.remove('compact');
-            document.body.style.paddingTop = '0';
+            navbar.classList.remove('scrolled');
         }
     }
 
-    lastScrollY = scrollY;
     ticking = false;
 }
 
 function onScroll() {
     if (!ticking) {
-        window.requestAnimationFrame(updateHeaderState);
+        window.requestAnimationFrame(updateNavbarState);
         ticking = true;
     }
 }
@@ -48,15 +36,9 @@ function onScroll() {
 // Initialize on page load
 window.addEventListener('scroll', onScroll, { passive: true });
 
-// Recalculate on resize
-window.addEventListener('resize', () => {
-    heroHeight = 0; // Reset to recalculate
-    updateHeaderState();
-});
-
 // Initial state check (in case page loads scrolled)
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateHeaderState);
+    document.addEventListener('DOMContentLoaded', updateNavbarState);
 } else {
-    updateHeaderState();
+    updateNavbarState();
 }

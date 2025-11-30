@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_hero
+from components.ui.header import create_hero, create_navbar
 from services import fetch_collection_photos, fetch_user_collections
 
 
@@ -177,6 +177,7 @@ def home_page(collections=None):
     return Html(
         create_head(),
         Body(
+            create_navbar(current_page='home'),
             create_hero(),
             # Collections grid section
             Main(

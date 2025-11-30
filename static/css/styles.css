@@ -38,6 +38,61 @@ textarea {
     font-family: inherit;
 }
 
+/* Fixed Navigation Bar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: transparent;
+    padding: 1rem 2rem;
+    z-index: 1000;
+    transition: all 0.3s ease-in-out;
+}
+
+.navbar.scrolled {
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.navbar-title {
+    font-size: 1.2rem;
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: opacity 0.3s;
+}
+
+.navbar a:hover {
+    opacity: 1 !important;
+}
+
+/* Hero Section */
 .hero {
     min-height: 40vh;
     display: flex;
@@ -46,34 +101,14 @@ textarea {
     background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     text-align: center;
     position: relative;
-    padding: 3rem 2rem;
-    z-index: 100;
-    transition: all 0.5s ease-in-out;
+    padding: 8rem 2rem 3rem;
+    margin-top: 0;
 }
 
 /* Full height hero for gallery page */
 #hero {
     min-height: 100vh;
-    padding: 8rem 2rem 6rem;
-}
-
-/* Compact header state when scrolled - becomes fixed */
-.hero.compact {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    min-height: auto;
-    padding: 1rem 2rem;
-    background: rgba(10, 10, 10, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#hero.compact {
-    min-height: auto;
-    padding: 1rem 2rem;
+    padding: 12rem 2rem 6rem;
 }
 
 .hero::before {
@@ -93,28 +128,6 @@ textarea {
     z-index: 1;
 }
 
-/* Compact hero content */
-.hero.compact .hero-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* Navigation */
-nav a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: opacity 0.3s;
-}
-
-nav a:hover {
-    opacity: 1 !important;
-}
-
 .hero h1 {
     font-size: clamp(2.5rem, 8vw, 5rem);
     font-weight: 200;
@@ -124,12 +137,6 @@ nav a:hover {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    transition: all 0.5s ease-in-out;
-}
-
-.hero.compact h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0;
 }
 
 .hero p {
@@ -138,15 +145,6 @@ nav a:hover {
     letter-spacing: 0.2em;
     text-transform: uppercase;
     font-weight: 300;
-    max-height: 100px;
-    overflow: hidden;
-    transition: all 0.5s ease-in-out;
-}
-
-.hero.compact p {
-    opacity: 0;
-    max-height: 0;
-    margin: 0;
 }
 
 .scroll-indicator {
@@ -155,12 +153,6 @@ nav a:hover {
     left: 50%;
     transform: translateX(-50%);
     animation: bounce 2s infinite;
-    transition: opacity 0.5s ease-in-out;
-}
-
-.hero.compact .scroll-indicator {
-    opacity: 0;
-    pointer-events: none;
 }
 
 .scroll-indicator::after {

@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_header
+from components.ui.header import create_header, create_navbar
 from components.ui.lightbox import create_lightbox
 from config import EXIF_LAZY_LOADING
 from services import fetch_collection_photos, fetch_user_collections
@@ -153,6 +153,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
             current_url=f'https://joaohfrodrigues.com/collection/{collection_id}',
         ),
         Body(
+            create_navbar(current_page='collections'),
             create_header(current_page='collections'),
             # Collection header
             Section(

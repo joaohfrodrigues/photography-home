@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_header
+from components.ui.header import create_header, create_navbar
 from services import fetch_user_collections
 
 
@@ -121,6 +121,7 @@ def collections_page(collections=None):
             current_url='https://joaohfrodrigues.com/collections',
         ),
         Body(
+            create_navbar(current_page='collections'),
             create_header(current_page='collections'),
             Main(
                 Section(
