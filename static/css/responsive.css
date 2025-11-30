@@ -32,7 +32,11 @@
         bottom: 2rem;
         width: 44px;
         height: 44px;
-        font-size: 1.75rem;
+    }
+
+    .lightbox-nav svg {
+        width: 22px;
+        height: 22px;
     }
 
     .lightbox-prev {
@@ -48,9 +52,13 @@
     .lightbox-close {
         width: 44px;
         height: 44px;
-        font-size: 2rem;
         top: 1.5rem;
         right: 1.5rem;
+    }
+
+    .lightbox-close svg {
+        width: 22px;
+        height: 22px;
     }
 }
 
@@ -117,15 +125,23 @@
     .lightbox-close {
         width: 40px;
         height: 40px;
-        font-size: 1.75rem;
         top: 1rem;
         right: 1rem;
+    }
+
+    .lightbox-close svg {
+        width: 20px;
+        height: 20px;
     }
 
     .lightbox-nav {
         width: 40px;
         height: 40px;
-        font-size: 1.5rem;
+    }
+
+    .lightbox-nav svg {
+        width: 20px;
+        height: 20px;
     }
 
     .lightbox-prev {

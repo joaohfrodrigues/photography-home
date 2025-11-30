@@ -7,9 +7,30 @@ def create_lightbox():
     """Create the lightbox modal for viewing photos"""
     return Div(
         Div(
-            Button('×', cls='lightbox-close', onclick='closeLightbox()'),
-            Button('‹', cls='lightbox-nav lightbox-prev', onclick='navigateLightbox(-1)'),
-            Button('›', cls='lightbox-nav lightbox-next', onclick='navigateLightbox(1)'),
+            # Close button with SVG X icon
+            Button(
+                NotStr(
+                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+                ),
+                cls='lightbox-close',
+                onclick='closeLightbox()',
+            ),
+            # Previous button with SVG left arrow
+            Button(
+                NotStr(
+                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>'
+                ),
+                cls='lightbox-nav lightbox-prev',
+                onclick='navigateLightbox(-1)',
+            ),
+            # Next button with SVG right arrow
+            Button(
+                NotStr(
+                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>'
+                ),
+                cls='lightbox-nav lightbox-next',
+                onclick='navigateLightbox(1)',
+            ),
             Div(
                 Div(
                     Img(src='', alt='', id='lightbox-img', cls='lightbox-image'),
