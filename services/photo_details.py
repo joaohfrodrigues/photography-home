@@ -45,7 +45,7 @@ def fetch_photo_details(photo_id):
             }
 
             logger.info(
-                f"Successfully fetched EXIF for {photo_id}: {exif_data.get('make')} {exif_data.get('model')}"
+                f'Successfully fetched EXIF for {photo_id}: {exif_data.get("make")} {exif_data.get("model")}'
             )
 
             # Cache the result

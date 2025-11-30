@@ -175,7 +175,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
                         style='font-size: 2.5rem; margin-bottom: 0.5rem; font-weight: 200; letter-spacing: 0.05em;',
                     ),
                     P(
-                        f"{collection['total_photos']} photos",
+                        f'{collection["total_photos"]} photos',
                         style='color: #888; font-size: 1.1rem; margin-bottom: 1rem;',
                     ),
                     P(

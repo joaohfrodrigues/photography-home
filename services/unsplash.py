@@ -22,7 +22,7 @@ def is_cache_valid():
     cache_valid = cache_age < (CACHE_DURATION_MINUTES * 60)
 
     if cache_valid:
-        logger.debug(f'Cache hit - age: {cache_age:.1f}s / {CACHE_DURATION_MINUTES*60}s')
+        logger.debug(f'Cache hit - age: {cache_age:.1f}s / {CACHE_DURATION_MINUTES * 60}s')
     else:
         logger.debug(f'Cache expired - age: {cache_age:.1f}s')
 
@@ -35,7 +35,7 @@ def _get_fallback_photos():
     return [
         {
             'url': f'https://picsum.photos/800/600?random={i}',
-            'title': f'Sample {i+1}',
+            'title': f'Sample {i + 1}',
             'description': '',
         }
         for i in range(6)
@@ -58,7 +58,9 @@ def _transform_photo_data(photos):
                 'url_raw': photo['urls']['raw'],
                 'url_regular': photo['urls']['regular'],
                 'url_thumb': photo['urls']['small'],
-                'title': photo.get('description') or photo.get('alt_description') or f'Photo {i+1}',
+                'title': photo.get('description')
+                or photo.get('alt_description')
+                or f'Photo {i + 1}',
                 'description': photo.get('description', ''),
                 'alt_description': photo.get('alt_description', ''),
                 'views': views,
@@ -93,7 +95,7 @@ def _transform_photo_data(photos):
                     'name': photo.get('user', {}).get('name', 'Unknown'),
                     'username': photo.get('user', {}).get('username', ''),
                     'portfolio_url': photo.get('user', {}).get('portfolio_url', ''),
-                    'profile_url': f"https://unsplash.com/@{photo.get('user', {}).get('username', '')}"
+                    'profile_url': f'https://unsplash.com/@{photo.get("user", {}).get("username", "")}'
                     if photo.get('user', {}).get('username')
                     else '',
                 },
@@ -120,7 +122,7 @@ def _log_exif_info(photos):
     logger.info(f'Photos with EXIF data in initial response: {exif_count}/{len(photos)}')
 
     if photos and photos[0].get('exif'):
-        logger.debug(f"Sample EXIF data: {photos[0].get('exif')}")
+        logger.debug(f'Sample EXIF data: {photos[0].get("exif")}')
     else:
         logger.warning('First photo has no EXIF data - checking raw response')
         if photos:

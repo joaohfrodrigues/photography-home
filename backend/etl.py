@@ -144,17 +144,17 @@ def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | Non
     # Fetch complete photo details if EXIF requested and not present
     if fetch_exif and not photo.get('exif', {}).get('make') and access_key:
         try:
-            logger.debug(f"Fetching EXIF for photo {photo['id']}")
+            logger.debug(f'Fetching EXIF for photo {photo["id"]}')
             headers = get_unsplash_headers(access_key)
             response = requests.get(
-                f"https://api.unsplash.com/photos/{photo['id']}", headers=headers, timeout=10
+                f'https://api.unsplash.com/photos/{photo["id"]}', headers=headers, timeout=10
             )
             if response.ok:
                 photo_detail = response.json()
                 # Merge EXIF data
                 photo['exif'] = photo_detail.get('exif', {})
         except Exception as e:
-            logger.warning(f"Failed to fetch EXIF for {photo['id']}: {e}")
+            logger.warning(f'Failed to fetch EXIF for {photo["id"]}: {e}')
 
     # Extract location
     location = photo.get('location', {}) or {}
@@ -172,7 +172,7 @@ def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | Non
         'id': photo['id'],
         'title': photo.get('description')
         or photo.get('alt_description')
-        or f"Photo by {user.get('name', 'Unknown')}",
+        or f'Photo by {user.get("name", "Unknown")}',
         'description': photo.get('description', ''),
         'alt_description': photo.get('alt_description', ''),
         'created_at': photo.get('created_at', ''),
@@ -191,7 +191,7 @@ def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | Non
         'url_thumb': photo.get('urls', {}).get('thumb', ''),
         'photographer_name': user.get('name', 'Unknown'),
         'photographer_username': user.get('username', ''),
-        'photographer_url': f"https://unsplash.com/@{user.get('username', '')}"
+        'photographer_url': f'https://unsplash.com/@{user.get("username", "")}'
         if user.get('username')
         else '',
         'photographer_avatar': user.get('profile_image', {}).get('large', ''),
@@ -247,7 +247,7 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
                 photo_ids.add(photo['id'])
                 total_photos_synced += 1
             except Exception as e:
-                logger.error(f"Error syncing user photo {photo.get('id')}: {e}")
+                logger.error(f'Error syncing user photo {photo.get("id")}: {e}')
 
         conn.commit()
         logger.info(f'Committed {len(user_photos)} user photos (with statistics)')
@@ -273,7 +273,7 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
             insert_collection(conn, collection_data)
             total_collections_synced += 1
 
-            logger.info(f"\nLinking photos to collection: {collection['title']}")
+            logger.info(f'\nLinking photos to collection: {collection["title"]}')
 
             # Fetch collection photos only to get photo IDs and link them
             photos = fetch_collection_photos(access_key, collection['id'], max_photos)
@@ -288,10 +288,10 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
                         photo.get('created_at', datetime.now(timezone.utc).isoformat()),
                     )
                 except Exception as e:
-                    logger.error(f"Error linking photo {photo.get('id')} to collection: {e}")
+                    logger.error(f'Error linking photo {photo.get("id")} to collection: {e}')
 
             conn.commit()
-            logger.info(f"Linked {len(photos)} photos to collection {collection['title']}")
+            logger.info(f'Linked {len(photos)} photos to collection {collection["title"]}')
 
         # Sync user photos (has statistics!)
         logger.info('\nSyncing user photos with statistics')
@@ -305,7 +305,7 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
                 insert_photo(conn, photo_data)
                 total_photos_synced += 1
             except Exception as e:
-                logger.error(f"Error syncing user photo {photo.get('id')}: {e}")
+                logger.error(f'Error syncing user photo {photo.get("id")}: {e}')
 
         conn.commit()
         logger.info(f'Committed {len(user_photos)} user photos (with statistics)')

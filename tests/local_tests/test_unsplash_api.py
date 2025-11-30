@@ -10,15 +10,15 @@ from config import UNSPLASH_ACCESS_KEY, UNSPLASH_USERNAME
 def _print_photo_analysis(photo, title='First Photo Analysis'):
     """Print analysis of a single photo"""
     print(f'\n--- {title} ---')
-    print(f"ID: {photo.get('id')}")
-    print(f"Description: {photo.get('description')}")
+    print(f'ID: {photo.get("id")}')
+    print(f'Description: {photo.get("description")}')
     if 'alt_description' in photo:
-        print(f"Alt Description: {photo.get('alt_description')}")
+        print(f'Alt Description: {photo.get("alt_description")}')
     if 'keys' in dir(photo):
         print(f'\nAvailable keys: {list(photo.keys())}')
-    print(f"\nEXIF data present: {photo.get('exif') is not None}")
+    print(f'\nEXIF data present: {photo.get("exif") is not None}')
     if photo.get('exif'):
-        print(f"EXIF content: {json.dumps(photo.get('exif'), indent=2)}")
+        print(f'EXIF content: {json.dumps(photo.get("exif"), indent=2)}')
     else:
         print('EXIF content: None or empty')
 

@@ -54,8 +54,8 @@ def test_db_with_data(tmp_path):
             'id': f'photo{i}',
             'title': f'Photo {i}',
             'description': f'Description {i}',
-            'created_at': f'2024-01-{i+1:02d}T00:00:00Z',
-            'updated_at': f'2024-01-{i+1:02d}T00:00:00Z',
+            'created_at': f'2024-01-{i + 1:02d}T00:00:00Z',
+            'updated_at': f'2024-01-{i + 1:02d}T00:00:00Z',
             'views': (10 - i) * 100,  # Descending views
             'downloads': i * 10,
             'width': 1920,
@@ -80,7 +80,7 @@ def test_db_with_data(tmp_path):
         for i in range(10):
             collection_id = 'col1' if i < 5 else 'col2'
             link_photo_to_collection(
-                conn, f'photo{i}', collection_id, f'2024-01-{i+1:02d}T00:00:00Z'
+                conn, f'photo{i}', collection_id, f'2024-01-{i + 1:02d}T00:00:00Z'
             )
 
         conn.commit()

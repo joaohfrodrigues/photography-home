@@ -66,7 +66,7 @@ def create_collection_card(collection):
                 ),
                 Div(
                     Span(
-                        f"{collection['total_photos']} photos",
+                        f'{collection["total_photos"]} photos',
                         style='color: #888; font-size: 0.9rem;',
                     ),
                     Span(' • ', style='color: #555; padding: 0 0.5rem;')

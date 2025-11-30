@@ -153,7 +153,7 @@ def create_collection_card(collection, index):
             ),
             # Photo count badge
             Div(
-                Span(f"{collection['total_photos']}", style='font-weight: 600;'),
+                Span(f'{collection["total_photos"]}', style='font-weight: 600;'),
                 ' photos',
                 cls='photo-count-badge',
                 style="""
@@ -205,7 +205,7 @@ def create_collection_card(collection, index):
                             width: 8px;
                             height: 8px;
                             border-radius: 50%;
-                            background: {"rgba(255, 255, 255, 0.8)" if i == 0 else "rgba(255, 255, 255, 0.3)"};
+                            background: {'rgba(255, 255, 255, 0.8)' if i == 0 else 'rgba(255, 255, 255, 0.3)'};
                             display: inline-block;
                             margin: 0 4px;
                             transition: background 0.3s ease;
@@ -237,10 +237,10 @@ def create_collection_card(collection, index):
                 style='font-size: 1.3rem; margin-bottom: 0.5rem; color: #fff; font-weight: 300;',
             ),
             Div(
-                Span(f"{collection['total_photos']} photos", style='color: #888;'),
+                Span(f'{collection["total_photos"]} photos', style='color: #888;'),
                 Span(' • ', style='color: #555; margin: 0 6px;'),
                 Span(
-                    f"Updated {_format_date(collection.get('updated_at', ''))}",
+                    f'Updated {_format_date(collection.get("updated_at", ""))}',
                     style='color: #888;',
                 ),
                 style='font-size: 0.85rem; display: flex; align-items: center;',
