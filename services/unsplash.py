@@ -302,9 +302,14 @@ def fetch_collection_photos(collection_id: str, page: int = 1, per_page: int = 3
         photos = response.json()
         photo_data = _transform_photo_data(photos)
 
-        # Determine if there are more pages
-        # If we got fewer photos than requested, we're on the last page
-        has_more = len(photos) == per_page
+        # Check for pagination using Link header (more reliable than counting photos)
+        # Unsplash provides 'Link' header with rel="next" if there are more pages
+        link_header = response.headers.get('Link', '')
+        has_more = 'rel="next"' in link_header
+
+        # Fallback: if no Link header, check if we got a full page
+        if not link_header:
+            has_more = len(photos) == per_page
 
         # Update cache
         _collection_photos_cache[cache_key] = {
