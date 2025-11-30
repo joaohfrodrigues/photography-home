@@ -8,6 +8,7 @@ from backend.db_service import (
     get_all_collections,
     get_collection_photos,
     get_collection_stats,
+    search_photos,
 )
 from components.ui.badges import get_collection_badges, render_badges
 from components.ui.footer import create_footer
@@ -276,8 +277,6 @@ def home_page(
 
     # Fetch latest photos if not provided
     if latest_photos is None:
-        from backend.db_service import search_photos
-
         latest_photos, has_more = search_photos(
             query=search_query, page=current_page, per_page=12, order_by=order
         )

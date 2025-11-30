@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 
+from fasthtml.common import Div
+
 from config import FEATURED_COLLECTION_IDS
 
 
@@ -90,8 +92,6 @@ def render_badges(badges):
     Returns:
         List of Div elements for unpacking with *
     """
-    from fasthtml.common import Div
-
     return [
         Div(
             f'{badge["emoji"]} {badge["text"]}',
