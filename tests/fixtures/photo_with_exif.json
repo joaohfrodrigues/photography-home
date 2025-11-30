@@ -1,0 +1,54 @@
+{
+    "id": "test_photo_exif",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "width": 6000,
+    "height": 4000,
+    "color": "#262626",
+    "blur_hash": "LGF5]+Yk^6#M@-5c,1J5@[or[Q6.",
+    "description": "Test photo with EXIF data",
+    "alt_description": "A test photo with camera EXIF information",
+    "urls": {
+        "raw": "https://images.unsplash.com/test-photo-exif-raw",
+        "full": "https://images.unsplash.com/test-photo-exif-full",
+        "regular": "https://images.unsplash.com/test-photo-exif-regular",
+        "small": "https://images.unsplash.com/test-photo-exif-small",
+        "thumb": "https://images.unsplash.com/test-photo-exif-thumb"
+    },
+    "user": {
+        "id": "test_user_id",
+        "username": "testphotographer",
+        "name": "Test Photographer"
+    },
+    "exif": {
+        "make": "Canon",
+        "model": "Canon EOS R5",
+        "exposure_time": "1/500",
+        "aperture": "2.8",
+        "focal_length": "85.0",
+        "iso": 400
+    },
+    "location": {
+        "name": "Test Mountain, Test Region",
+        "city": "Test City",
+        "country": "Test Country",
+        "position": {
+            "latitude": 45.5,
+            "longitude": -122.6
+        }
+    },
+    "tags": [
+        {
+            "type": "search",
+            "title": "mountain"
+        },
+        {
+            "type": "search",
+            "title": "nature"
+        },
+        {
+            "type": "landing_page",
+            "title": "landscape"
+        }
+    ]
+}

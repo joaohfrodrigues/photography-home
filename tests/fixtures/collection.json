@@ -1,0 +1,15 @@
+{
+    "id": "test_collection_1",
+    "title": "Test Collection",
+    "description": "A test collection for unit tests",
+    "published_at": "2024-01-01T00:00:00Z",
+    "last_collected_at": "2024-01-02T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "total_photos": 57,
+    "cover_photo": {
+        "id": "test_cover_photo",
+        "urls": {
+            "regular": "https://images.unsplash.com/test-photo"
+        }
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "id": "test_photo_stats",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "width": 5000,
+    "height": 4000,
+    "color": "#0c2626",
+    "blur_hash": "LRCO7}D%Rjof~qM{WBofIUM{WBay",
+    "description": "Test photo with statistics",
+    "alt_description": "A test photo with view and download stats",
+    "urls": {
+        "raw": "https://images.unsplash.com/test-photo-stats-raw",
+        "full": "https://images.unsplash.com/test-photo-stats-full",
+        "regular": "https://images.unsplash.com/test-photo-stats-regular",
+        "small": "https://images.unsplash.com/test-photo-stats-small",
+        "thumb": "https://images.unsplash.com/test-photo-stats-thumb"
+    },
+    "user": {
+        "id": "test_user_id",
+        "username": "testphotographer",
+        "name": "Test Photographer"
+    },
+    "statistics": {
+        "downloads": {
+            "total": 1250
+        },
+        "views": {
+            "total": 45000
+        }
+    },
+    "tags": [
+        {
+            "type": "search",
+            "title": "test"
+        },
+        {
+            "type": "landing_page",
+            "title": "landscape"
+        }
+    ]
+}

@@ -1,0 +1,57 @@
+{
+    "id": "test_photo_exif_location",
+    "slug": "test-photo-with-full-data",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "width": 5183,
+    "height": 3455,
+    "color": "#0c2626",
+    "blur_hash": "LRCO7}D%Rjof~qM{WBofIUM{WBay",
+    "description": "Test photo with complete EXIF and location",
+    "alt_description": "A comprehensive test photo with all metadata",
+    "urls": {
+        "raw": "https://images.unsplash.com/test-complete-raw",
+        "full": "https://images.unsplash.com/test-complete-full",
+        "regular": "https://images.unsplash.com/test-complete-regular",
+        "small": "https://images.unsplash.com/test-complete-small",
+        "thumb": "https://images.unsplash.com/test-complete-thumb",
+        "small_s3": "https://s3.us-west-2.amazonaws.com/images.unsplash.com/small/test-complete"
+    },
+    "user": {
+        "id": "test_user_id",
+        "username": "testphotographer",
+        "name": "Test Photographer"
+    },
+    "exif": {
+        "make": "SONY",
+        "model": "ILCE-6600",
+        "name": "SONY, ILCE-6600",
+        "exposure_time": "1/250",
+        "aperture": "5.6",
+        "focal_length": "73.0",
+        "iso": 100
+    },
+    "location": {
+        "name": "Test Island, Test Region, Test Country",
+        "city": null,
+        "country": "Test Country",
+        "position": {
+            "latitude": 38.458049,
+            "longitude": -28.322816
+        }
+    },
+    "tags": [
+        {
+            "type": "search",
+            "title": "test"
+        },
+        {
+            "type": "search",
+            "title": "island"
+        },
+        {
+            "type": "landing_page",
+            "title": "nature"
+        }
+    ]
+}

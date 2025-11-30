@@ -1,0 +1,33 @@
+{
+    "id": "test_photo_collection",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z",
+    "width": 5000,
+    "height": 4000,
+    "color": "#0c26d9",
+    "blur_hash": "LD5rXjshM[WT%7xbW9RjjqxYn%WA",
+    "description": "Test photo from collection",
+    "alt_description": "A test photo for collection endpoint tests",
+    "urls": {
+        "raw": "https://images.unsplash.com/test-photo-raw",
+        "full": "https://images.unsplash.com/test-photo-full",
+        "regular": "https://images.unsplash.com/test-photo-regular",
+        "small": "https://images.unsplash.com/test-photo-small",
+        "thumb": "https://images.unsplash.com/test-photo-thumb"
+    },
+    "user": {
+        "id": "test_user_id",
+        "username": "testphotographer",
+        "name": "Test Photographer"
+    },
+    "tags": [
+        {
+            "type": "search",
+            "title": "test"
+        },
+        {
+            "type": "search",
+            "title": "nature"
+        }
+    ]
+}

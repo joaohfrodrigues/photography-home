@@ -2,10 +2,10 @@
 
 from fasthtml.common import *
 
+from backend.db_service import get_all_collections
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_navbar
-from services import fetch_user_collections
 
 
 def create_collection_card(collection):
@@ -112,7 +112,7 @@ def create_collection_card(collection):
 def collections_page(collections=None):
     """Render the all collections page"""
     if collections is None:
-        collections = fetch_user_collections()
+        collections = get_all_collections()
 
     return Html(
         create_head(

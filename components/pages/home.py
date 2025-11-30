@@ -4,12 +4,12 @@ from datetime import datetime, timedelta, timezone
 
 from fasthtml.common import *
 
+from backend.db_service import get_all_collections, get_collection_photos, get_latest_photos
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_hero, create_navbar
 from components.ui.lightbox import create_lightbox
 from components.ui.photo_grid import create_photo_grid
-from services import fetch_collection_photos, fetch_latest_user_photos, fetch_user_collections
 
 
 def _is_recently_updated(date_str):
@@ -55,7 +55,7 @@ def _format_date(date_str):  # noqa: PLR0911
 def create_collection_card(collection, index):
     """Create a compact collection card with carousel"""
     collection_id = collection['id']
-    photos, _ = fetch_collection_photos(collection_id, page=1, per_page=6)
+    photos, _ = get_collection_photos(collection_id, page=1, per_page=6)
 
     # Create carousel items with regular quality images
     carousel_items = []
@@ -269,14 +269,14 @@ def create_collection_card(collection, index):
 def home_page(collections=None, latest_photos=None, order='popular'):
     """Render the home page with latest collections and featured photos grid"""
     if collections is None:
-        collections = fetch_user_collections()
+        collections = get_all_collections()
 
     # Filter for featured collections only (first 3-4)
     featured_collections = [c for c in collections if c.get('featured', False)]
 
     # Fetch latest photos if not provided
     if latest_photos is None:
-        latest_photos, has_more = fetch_latest_user_photos(page=1, per_page=12, order_by=order)
+        latest_photos, has_more = get_latest_photos(page=1, per_page=12, order_by=order)
     else:
         has_more = False  # Assume no more if photos were provided
 

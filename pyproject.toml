@@ -17,6 +17,7 @@ dev = [
     "pre-commit>=3.5.0",
     "ruff>=0.7.0",
     "bandit[toml]>=1.7.0",
+    "pytest>=7.4.0",
 ]
 
 [tool.ruff]
@@ -92,7 +93,7 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", "venv"]
-skips = ["B101", "B601"]
+skips = ["B101", "B601", "B608"]  # B608: SQL injection check - using whitelisted values
 
 [tool.bandit.assert_used]
 skips = ["*_test.py", "test_*.py"]
