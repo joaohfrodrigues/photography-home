@@ -34,14 +34,11 @@ def register_api_routes(rt):
         """API endpoint to fetch photos from a collection (for infinite scroll)"""
         logger.info(f'Fetching photos for collection {collection_id}, page {page}')
         per_page = 30
-        photos = fetch_collection_photos(collection_id, page=page, per_page=per_page)
+        photos, has_more = fetch_collection_photos(collection_id, page=page, per_page=per_page)
 
         if photos is None:
             logger.error(f'Failed to fetch photos for collection {collection_id}')
             return {'error': 'Failed to fetch photos'}, 500
-
-        # Check if there are more photos (if we got a full page, assume there might be more)
-        has_more = len(photos) == per_page
 
         logger.info(f'Returning {len(photos)} photos, has_more={has_more}')
         return {'photos': photos, 'has_more': has_more}
