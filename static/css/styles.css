@@ -45,8 +45,7 @@ textarea {
     justify-content: center;
     background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     text-align: center;
-    position: sticky;
-    top: 0;
+    position: relative;
     padding: 3rem 2rem;
     z-index: 100;
     transition: all 0.5s ease-in-out;
@@ -58,8 +57,12 @@ textarea {
     padding: 8rem 2rem 6rem;
 }
 
-/* Compact header state when scrolled */
+/* Compact header state when scrolled - becomes fixed */
 .hero.compact {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     min-height: auto;
     padding: 1rem 2rem;
     background: rgba(10, 10, 10, 0.95);
