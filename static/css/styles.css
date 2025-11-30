@@ -797,6 +797,19 @@ footer a:hover {
     }
 }
 
+/* Photo grid responsive columns */
+@media (max-width: 1400px) {
+    .photo-grid {
+        column-count: 3 !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .photo-grid {
+        column-count: 2 !important;
+    }
+}
+
 @media (max-width: 480px) {
     .hero h1 {
         letter-spacing: 0.1em;
@@ -815,6 +828,10 @@ footer a:hover {
 
     .lightbox-title {
         font-size: 1.3rem;
+    }
+
+    .photo-grid {
+        column-count: 1 !important;
     }
 }
 

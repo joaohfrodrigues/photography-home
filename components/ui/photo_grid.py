@@ -77,9 +77,6 @@ def create_photo_card(photo, index=0):
             style="""
                 position: relative;
                 width: 100%;
-                aspect-ratio: """
-            + str(aspect_ratio)
-            + """;
                 overflow: hidden;
                 border-radius: 8px;
                 background: #1a1a1a;
@@ -91,10 +88,13 @@ def create_photo_card(photo, index=0):
             display: block;
             text-decoration: none;
             color: #fff;
+            margin-bottom: 1.5rem;
+            break-inside: avoid;
             opacity: 0;
             animation: fadeInScale 0.5s ease-out forwards;
             animation-delay: {min(index * 0.05, 1)}s;
         """,
+        data_index=str(index),
         onmouseover="this.querySelector('.photo-overlay').style.opacity='1'; this.querySelector('img').style.transform='scale(1.05)'",
         onmouseout="this.querySelector('.photo-overlay').style.opacity='0'; this.querySelector('img').style.transform='scale(1)'",
         **{
@@ -128,10 +128,8 @@ def create_photo_grid(photos, show_search=True):
             *[create_photo_card(photo, i) for i, photo in enumerate(photos)],
             cls='photo-grid',
             style="""
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 1.5rem;
-                grid-auto-flow: dense;
+                column-count: 4;
+                column-gap: 1.5rem;
             """,
         ),
         # Loading indicator for infinite scroll

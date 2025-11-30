@@ -4,8 +4,6 @@
 
 function filterPhotos() {
     const searchInput = document.getElementById('photo-search')?.value.toLowerCase() || '';
-    const yearFilter = document.getElementById('year-filter')?.value || 'all';
-    const orientationFilter = document.getElementById('orientation-filter')?.value || 'all';
 
     const photos = document.querySelectorAll('.photo-card');
     let visibleCount = 0;
@@ -14,21 +12,16 @@ function filterPhotos() {
         const title = photo.dataset.title?.toLowerCase() || '';
         const tags = photo.dataset.tags?.toLowerCase() || '';
         const location = photo.dataset.location?.toLowerCase() || '';
-        const year = photo.dataset.year || '';
-        const orientation = photo.dataset.orientation || '';
 
-        // Check if photo matches all active filters
+        // Check if photo matches search
         const matchesSearch =
             !searchInput ||
             title.includes(searchInput) ||
             tags.includes(searchInput) ||
             location.includes(searchInput);
 
-        const matchesYear = yearFilter === 'all' || year === yearFilter;
-        const matchesOrientation = orientationFilter === 'all' || orientation === orientationFilter;
-
-        // Show/hide based on all filters
-        if (matchesSearch && matchesYear && matchesOrientation) {
+        // Show/hide based on search
+        if (matchesSearch) {
             photo.style.display = '';
             photo.style.animation = 'fadeIn 0.3s ease-in';
             visibleCount++;
@@ -48,14 +41,10 @@ function filterPhotos() {
 }
 
 function clearFilters() {
-    // Reset all filter inputs
+    // Reset search input
     const searchInput = document.getElementById('photo-search');
-    const yearFilter = document.getElementById('year-filter');
-    const orientationFilter = document.getElementById('orientation-filter');
 
     if (searchInput) searchInput.value = '';
-    if (yearFilter) yearFilter.value = 'all';
-    if (orientationFilter) orientationFilter.value = 'all';
 
     // Show all photos
     filterPhotos();
@@ -78,8 +67,8 @@ function updateNoResultsMessage(visibleCount) {
             `;
             noResultsMsg.innerHTML = `
                 <p style="margin-bottom: 1rem; font-size: 1.5rem;">📷</p>
-                <p>No photos match your filters.</p>
-                <p style="margin-top: 0.5rem; font-size: 0.9rem;">Try adjusting your search or clearing filters.</p>
+                <p>No photos match your search.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">Try a different search term.</p>
             `;
 
             // Insert after photo grid
