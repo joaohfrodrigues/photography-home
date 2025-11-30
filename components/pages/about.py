@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_header
+from components.ui.header import create_navbar
 from services.markdown import load_markdown_page
 
 
@@ -22,8 +22,7 @@ def about_page():
             current_url=metadata.get('url', 'https://joaohfrodrigues.com/about'),
         ),
         Body(
-            # Use shared header component
-            create_header(current_page='about'),
+            create_navbar(current_page='about'),
             # Content
             Main(
                 Section(
@@ -43,7 +42,7 @@ def about_page():
                             """,
                         ),
                         cls='container',
-                        style='max-width: 800px; margin: 0 auto; padding: 4rem 2rem;',
+                        style='max-width: 800px; margin: 0 auto; padding: 8rem 2rem 4rem;',
                     ),
                     style='min-height: 50vh;',
                 ),

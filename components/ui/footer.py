@@ -9,8 +9,6 @@ def create_footer():
         Div(
             P('© 2025 João Rodrigues. All rights reserved.'),
             P(
-                A('Contact', href='mailto:contact@joaohfrodrigues.com'),
-                Span(' • ', style='margin: 0 0.5rem;'),
                 A(
                     'Instagram',
                     href='https://instagram.com/joaohfrodrigues',

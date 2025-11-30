@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_header, create_navbar
+from components.ui.header import create_navbar
 from components.ui.lightbox import create_lightbox
 from config import EXIF_LAZY_LOADING
 from services import fetch_collection_photos, fetch_user_collections
@@ -118,7 +118,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
         return Html(
             create_head(title='Collection Not Found'),
             Body(
-                create_header(),
+                create_navbar(current_page='collections'),
                 Main(
                     Section(
                         Div(
@@ -132,7 +132,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
                                 href='/collections',
                                 style='display: block; text-align: center; margin-top: 2rem; color: #fff;',
                             ),
-                            style='padding: 4rem 2rem;',
+                            style='padding: 8rem 2rem 4rem;',
                         )
                     )
                 ),
@@ -154,7 +154,6 @@ def collection_detail_page(collection_id: str, page: int = 1):
         ),
         Body(
             create_navbar(current_page='collections'),
-            create_header(current_page='collections'),
             # Collection header
             Section(
                 Div(
@@ -186,7 +185,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
                     if collection['description']
                     else None,
                     cls='container',
-                    style='max-width: 1400px; margin: 0 auto; padding: 2rem 2rem 1rem 2rem;',
+                    style='max-width: 1400px; margin: 0 auto; padding: 8rem 2rem 2rem 2rem;',
                 )
             ),
             # Gallery

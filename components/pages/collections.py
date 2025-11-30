@@ -4,7 +4,7 @@ from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
-from components.ui.header import create_header, create_navbar
+from components.ui.header import create_navbar
 from services import fetch_user_collections
 
 
@@ -122,7 +122,6 @@ def collections_page(collections=None):
         ),
         Body(
             create_navbar(current_page='collections'),
-            create_header(current_page='collections'),
             Main(
                 Section(
                     Div(
@@ -152,7 +151,7 @@ def collections_page(collections=None):
                             )
                         ),
                         cls='container',
-                        style='max-width: 1400px; margin: 0 auto; padding: 4rem 2rem;',
+                        style='max-width: 1400px; margin: 0 auto; padding: 8rem 2rem 4rem;',
                     ),
                 ),
             ),
