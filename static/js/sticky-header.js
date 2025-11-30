@@ -3,21 +3,26 @@ console.log('📌 Sticky header script loaded');
 
 let lastScrollY = 0;
 let ticking = false;
+let isCompact = false;
 
 function updateHeaderState() {
     const hero = document.querySelector('.hero, #hero');
     if (!hero) return;
 
     const scrollY = window.scrollY;
-    const heroHeight = hero.offsetHeight;
 
-    // Threshold: compact when scrolled more than 150px
-    const threshold = 150;
+    // Threshold: compact when scrolled more than 100px
+    const threshold = 100;
+    const shouldBeCompact = scrollY > threshold;
 
-    if (scrollY > threshold) {
-        hero.classList.add('compact');
-    } else {
-        hero.classList.remove('compact');
+    // Only update if state actually changed
+    if (shouldBeCompact !== isCompact) {
+        isCompact = shouldBeCompact;
+        if (isCompact) {
+            hero.classList.add('compact');
+        } else {
+            hero.classList.remove('compact');
+        }
     }
 
     lastScrollY = scrollY;
