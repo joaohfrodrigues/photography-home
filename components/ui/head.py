@@ -72,4 +72,6 @@ def create_head(
         # JavaScript (deferred)
         Script(src='/static/js/sticky-header.js', defer=True),
         Script(src='/static/js/lightbox.js', defer=True),
+        Script(src='/static/js/animations.js', defer=True),
+        Script(src='/static/js/keyboard-navigation.js', defer=True),
     )

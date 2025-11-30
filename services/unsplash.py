@@ -206,10 +206,10 @@ def fetch_user_collections():
     Returns:
         List of collection dictionaries with id, title, description, photo count, cover photo
     """
-    # Check cache (24 hour cache for collections)
+    # Check cache (7 day cache for collections - they rarely change)
     if _collections_cache['data'] and _collections_cache['timestamp']:
         cache_age = time.time() - _collections_cache['timestamp']
-        if cache_age < (24 * 60 * 60):  # 24 hours
+        if cache_age < (7 * 24 * 60 * 60):  # 7 days
             logger.info('Using cached collections')
             return _collections_cache['data']
 
@@ -234,7 +234,7 @@ def fetch_user_collections():
         collections = response.json()
 
         # Transform to simplified structure
-        # Mark first 3 collections as featured (by most recent)
+        # Mark first 2 collections as featured (reduces API calls on homepage)
         collection_data = [
             {
                 'id': c['id'],
@@ -243,12 +243,13 @@ def fetch_user_collections():
                 'total_photos': c.get('total_photos', 0),
                 'cover_photo': {
                     'url': c.get('cover_photo', {}).get('urls', {}).get('regular', ''),
+                    'url_raw': c.get('cover_photo', {}).get('urls', {}).get('raw', ''),
                     'url_small': c.get('cover_photo', {}).get('urls', {}).get('small', ''),
                     'color': c.get('cover_photo', {}).get('color', '#ccc'),
                 },
                 'published_at': c.get('published_at', ''),
                 'updated_at': c.get('updated_at', ''),
-                'featured': i < 3,  # First 3 collections are featured
+                'featured': i < 2,  # First 2 collections are featured
             }
             for i, c in enumerate(collections)
         ]
@@ -280,11 +281,11 @@ def fetch_latest_user_photos(page: int = 1, per_page: int = 30, order_by: str = 
     """
     cache_key = f'photos:{order_by}:page:{page}'
 
-    # Check cache (15 minutes for latest photos)
+    # Check cache (30 minutes for latest photos)
     if cache_key in _collection_photos_cache:
         cached_data = _collection_photos_cache[cache_key]
         cache_age = time.time() - cached_data['timestamp']
-        if cache_age < (15 * 60):  # 15 minutes
+        if cache_age < (30 * 60):  # 30 minutes
             logger.info(f'Using cached latest photos for page {page}')
             return cached_data['photos'], cached_data['has_more']
 
@@ -352,11 +353,11 @@ def fetch_collection_photos(collection_id: str, page: int = 1, per_page: int = 3
     """
     cache_key = f'{collection_id}:page:{page}'
 
-    # Check cache (1 hour cache for collection photos)
+    # Check cache (24 hour cache for collection photos)
     if cache_key in _collection_photos_cache:
         cached_data = _collection_photos_cache[cache_key]
         cache_age = time.time() - cached_data['timestamp']
-        if cache_age < (60 * 60):  # 1 hour
+        if cache_age < (24 * 60 * 60):  # 24 hours
             logger.info(f'Using cached photos for {cache_key}')
             return cached_data['photos'], cached_data['has_more']
 

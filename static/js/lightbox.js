@@ -119,7 +119,7 @@ function updateLightboxPhotos() {
         }
 
         return {
-            url: img ? img.src : '',
+            url: item.dataset.lightboxUrl || (img ? img.src : ''),
             title: titleDiv ? titleDiv.textContent : '',
             description: item.dataset.description || '',
             tags: item.dataset.tags || '',
@@ -326,9 +326,25 @@ function navigateLightbox(direction) {
 
 function updateLightboxContent() {
     const photo = photos[currentPhotoIndex];
+    const imgElement = document.getElementById('lightbox-img');
 
-    // Update metadata
-    document.getElementById('lightbox-img').src = photo.url;
+    // Fade out the current image first
+    imgElement.style.opacity = '0';
+
+    // Preload the new image
+    const newImg = new Image();
+    newImg.src = photo.url;
+
+    newImg.onload = () => {
+        // Once loaded, update the src and fade in
+        imgElement.src = photo.url;
+        imgElement.dataset.index = currentPhotoIndex;
+        setTimeout(() => {
+            imgElement.style.opacity = '1';
+        }, 50);
+    };
+
+    // Update metadata only after starting image transition
     document.getElementById('lightbox-title').textContent = photo.title;
     document.getElementById('lightbox-description').textContent = photo.description || '';
     document.getElementById('lightbox-index').textContent =

@@ -1,4 +1,6 @@
-"""Home page component - Hybrid layout with featured collections and latest photos"""
+"""Home page component - Hybrid layout with latest collections and featured photos"""
+
+from datetime import datetime, timedelta, timezone
 
 from fasthtml.common import *
 
@@ -10,16 +12,56 @@ from components.ui.photo_grid import create_photo_grid
 from services import fetch_collection_photos, fetch_latest_user_photos, fetch_user_collections
 
 
+def _is_recently_updated(date_str):
+    """Check if a date is within the last 7 days"""
+    if not date_str:
+        return False
+    try:
+        updated = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        return (now - updated) < timedelta(days=7)
+    except (ValueError, AttributeError):
+        return False
+
+
+def _format_date(date_str):  # noqa: PLR0911
+    """Format date string to relative time (e.g., '2 days ago')"""
+    if not date_str:
+        return 'recently'
+    try:
+        updated = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        delta = now - updated
+
+        if delta.days == 0:
+            return 'today'
+        elif delta.days == 1:
+            return 'yesterday'
+        elif delta.days < 7:
+            return f'{delta.days} days ago'
+        elif delta.days < 30:
+            weeks = delta.days // 7
+            return f'{weeks} week{"s" if weeks > 1 else ""} ago'
+        elif delta.days < 365:
+            months = delta.days // 30
+            return f'{months} month{"s" if months > 1 else ""} ago'
+        else:
+            years = delta.days // 365
+            return f'{years} year{"s" if years > 1 else ""} ago'
+    except (ValueError, AttributeError):
+        return 'recently'
+
+
 def create_collection_card(collection, index):
     """Create a compact collection card with carousel"""
     collection_id = collection['id']
     photos, _ = fetch_collection_photos(collection_id, page=1, per_page=6)
 
-    # Create carousel items with smaller images for faster loading
+    # Create carousel items with regular quality images
     carousel_items = []
     for i, photo in enumerate(photos[:6]):
-        # Use smaller thumbnail for carousel (400px width is sufficient for card display)
-        img_url = photo['url_thumb'] if 'url_thumb' in photo else photo['url']
+        # Use regular quality for carousel display
+        img_url = photo.get('url_regular', photo.get('url', ''))
 
         carousel_items.append(
             Img(
@@ -109,6 +151,51 @@ def create_collection_card(collection, index):
                 """,
                 onclick='event.preventDefault(); event.stopPropagation();',
             ),
+            # Photo count badge
+            Div(
+                Span(f"{collection['total_photos']}", style='font-weight: 600;'),
+                ' photos',
+                cls='photo-count-badge',
+                style="""
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
+                    background: rgba(0, 0, 0, 0.75);
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    z-index: 2;
+                    backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
+                """,
+            ),
+            # Recently Updated badge (if updated in last 7 days)
+            *(
+                [
+                    Div(
+                        '✨ Recently Updated',
+                        cls='recently-updated-badge',
+                        style="""
+                        position: absolute;
+                        top: 12px;
+                        left: 12px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        z-index: 2;
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+                    """,
+                    )
+                ]
+                if _is_recently_updated(collection.get('updated_at', ''))
+                else []
+            ),
             # Carousel indicators (dots)
             Div(
                 *[
@@ -149,7 +236,15 @@ def create_collection_card(collection, index):
                 collection['title'],
                 style='font-size: 1.3rem; margin-bottom: 0.5rem; color: #fff; font-weight: 300;',
             ),
-            P(f"{collection['total_photos']} photos", style='color: #888; font-size: 0.85rem;'),
+            Div(
+                Span(f"{collection['total_photos']} photos", style='color: #888;'),
+                Span(' • ', style='color: #555; margin: 0 6px;'),
+                Span(
+                    f"Updated {_format_date(collection.get('updated_at', ''))}",
+                    style='color: #888;',
+                ),
+                style='font-size: 0.85rem; display: flex; align-items: center;',
+            ),
             style='padding: 1.25rem;',
         ),
         href=f'/collection/{collection_id}',
@@ -172,7 +267,7 @@ def create_collection_card(collection, index):
 
 
 def home_page(collections=None, latest_photos=None, order='popular'):
-    """Render the home page with featured collections and latest photos grid"""
+    """Render the home page with latest collections and featured photos grid"""
     if collections is None:
         collections = fetch_user_collections()
 
@@ -181,7 +276,9 @@ def home_page(collections=None, latest_photos=None, order='popular'):
 
     # Fetch latest photos if not provided
     if latest_photos is None:
-        latest_photos, _ = fetch_latest_user_photos(page=1, per_page=24, order_by=order)
+        latest_photos, has_more = fetch_latest_user_photos(page=1, per_page=12, order_by=order)
+    else:
+        has_more = False  # Assume no more if photos were provided
 
     return Html(
         create_head(),
@@ -240,26 +337,54 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                             style='text-align: center; margin-top: 2rem;',
                         ),
                         cls='container',
-                        style='max-width: 1600px; margin: 0 auto; padding: 4rem 2rem 3rem;',
+                        style='max-width: 1600px; margin: 0 auto; padding: 3rem 2rem 2rem;',
                     ),
-                    style='background: rgba(255, 255, 255, 0.01);',
+                    style='background: linear-gradient(180deg, rgba(255,255,255,0.015) 0%, transparent 100%);',
                 ),
-                # Latest Photos Section (70%)
+                # Featured Photos Section (75%)
                 Section(
                     Div(
                         Div(
                             H2(
-                                'Latest Photos',
+                                'Featured Photos',
                                 style='font-size: 2rem; margin-bottom: 0.5rem; font-weight: 200; letter-spacing: 0.05em;',
                             ),
                             P(
-                                'Browse and search through my most recent photography',
+                                'My best work, curated by popularity and views',
                                 style='color: rgba(255, 255, 255, 0.6); font-size: 1rem; margin-bottom: 3rem;',
                             ),
                             style='text-align: center;',
                         ),
                         # Photo grid with search
                         create_photo_grid(latest_photos, show_search=True),
+                        # Load more button for infinite scroll
+                        Div(
+                            Button(
+                                'Load More Photos',
+                                id='load-more-btn',
+                                cls='load-more-btn',
+                                style="""
+                                    display: block;
+                                    margin: 3rem auto;
+                                    padding: 1rem 2.5rem;
+                                    background: rgba(255, 255, 255, 0.05);
+                                    border: 1px solid rgba(255, 255, 255, 0.15);
+                                    border-radius: 8px;
+                                    color: #fff;
+                                    font-size: 1rem;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                """,
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.25)'",
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.15)'",
+                                **{
+                                    'data-page': '2',
+                                    'data-order': order,
+                                },
+                            ),
+                            id='load-more-container',
+                            style='text-align: center;' if has_more else 'display: none;',
+                        ),
                         cls='container',
                         style='max-width: 1800px; margin: 0 auto; padding: 4rem 2rem;',
                     ),
@@ -398,8 +523,9 @@ def home_page(collections=None, latest_photos=None, order='popular'):
             """),
             # Load search filter script
             Script(src='/static/js/search-filter.js'),
-            # Load lightbox script
-            Script(src='/static/js/lightbox.js'),
+            # Load infinite scroll script (works for both homepage and collections)
+            Script(src='/static/js/infinite-scroll.js') if has_more else None,
+            # Lightbox script already loaded in head.py
             create_footer(),
             create_lightbox(),
         ),

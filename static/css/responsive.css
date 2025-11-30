@@ -1,0 +1,141 @@
+/* Responsive: media queries for all breakpoints */
+
+@media (max-width: 1200px) {
+    .gallery-grid {
+        column-count: 2;
+    }
+
+    .collections-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+        gap: 1.5rem !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .lightbox-content {
+        flex-direction: column;
+        max-width: 95vw;
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .lightbox-image-container {
+        max-width: 100%;
+    }
+
+    .lightbox-details {
+        flex: 0 0 auto;
+    }
+
+    .lightbox-nav {
+        top: auto;
+        bottom: 2rem;
+    }
+
+    .lightbox-prev {
+        left: 50%;
+        transform: translateX(-60px);
+    }
+
+    .lightbox-next {
+        right: 50%;
+        transform: translateX(60px);
+    }
+}
+
+@media (max-width: 900px) {
+    .photo-grid .masonry-column:nth-child(3) {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .gallery-grid {
+        column-count: 1;
+        column-gap: 0;
+    }
+
+    .gallery {
+        padding: 4rem 1.5rem;
+    }
+
+    .gallery-item {
+        margin-bottom: 2rem;
+    }
+
+    .scroll-indicator {
+        bottom: 2rem;
+    }
+
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group-inline {
+        flex: 1 1 100%;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .filter-reset {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .reset-text {
+        display: inline;
+    }
+
+    .reset-icon {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero h1 {
+        letter-spacing: 0.1em;
+    }
+
+    .gallery-item {
+        border-radius: 8px;
+    }
+
+    .lightbox-close,
+    .lightbox-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .lightbox-title {
+        font-size: 1.3rem;
+    }
+
+    .photo-grid .masonry-column:nth-child(2),
+    .photo-grid .masonry-column:nth-child(3) {
+        display: none !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .filters-wrapper,
+    .lightbox,
+    footer,
+    .scroll-indicator,
+    nav {
+        display: none !important;
+    }
+
+    .gallery-grid {
+        column-count: 2 !important;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+}
