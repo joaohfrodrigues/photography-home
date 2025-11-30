@@ -30,6 +30,9 @@
     .lightbox-nav {
         top: auto;
         bottom: 2rem;
+        width: 44px;
+        height: 44px;
+        font-size: 1.75rem;
     }
 
     .lightbox-prev {
@@ -40,6 +43,14 @@
     .lightbox-next {
         right: 50%;
         transform: translateX(60px);
+    }
+
+    .lightbox-close {
+        width: 44px;
+        height: 44px;
+        font-size: 2rem;
+        top: 1.5rem;
+        right: 1.5rem;
     }
 }
 
@@ -103,11 +114,26 @@
         border-radius: 8px;
     }
 
-    .lightbox-close,
+    .lightbox-close {
+        width: 40px;
+        height: 40px;
+        font-size: 1.75rem;
+        top: 1rem;
+        right: 1rem;
+    }
+
     .lightbox-nav {
         width: 40px;
         height: 40px;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
+    }
+
+    .lightbox-prev {
+        transform: translateX(-52px);
+    }
+
+    .lightbox-next {
+        transform: translateX(52px);
     }
 
     .lightbox-title {

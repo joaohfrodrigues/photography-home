@@ -130,7 +130,20 @@ def collection_detail_page(collection_id: str, page: int = 1):
                             A(
                                 '← Back to Collections',
                                 href='/collections',
-                                style='display: block; text-align: center; margin-top: 2rem; color: #fff;',
+                                style="""
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 0.5rem;
+                                    margin-top: 2rem;
+                                    padding: 0.75rem 1.5rem;
+                                    color: #fff;
+                                    text-decoration: none;
+                                    background: rgba(255, 255, 255, 0.1);
+                                    border-radius: 8px;
+                                    transition: all 0.3s ease;
+                                """,
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateX(-4px)';",
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateX(0)';",
                             ),
                             style='padding: 8rem 2rem 4rem;',
                         )
@@ -163,12 +176,18 @@ def collection_detail_page(collection_id: str, page: int = 1):
                         style="""
                             color: #888;
                             text-decoration: none;
-                            font-size: 0.9rem;
-                            display: inline-block;
-                            margin-bottom: 1rem;
+                            font-size: 0.95rem;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                            margin-bottom: 1.5rem;
+                            padding: 0.5rem 1rem;
+                            border-radius: 8px;
+                            transition: all 0.3s ease;
+                            background: rgba(255, 255, 255, 0.03);
                         """,
-                        onmouseover="this.style.color='#fff'",
-                        onmouseout="this.style.color='#888'",
+                        onmouseover="this.style.color='#fff'; this.style.background='rgba(255, 255, 255, 0.08)'; this.style.transform='translateX(-4px)';",
+                        onmouseout="this.style.color='#888'; this.style.background='rgba(255, 255, 255, 0.03)'; this.style.transform='translateX(0)';",
                     ),
                     H1(
                         collection['title'],
