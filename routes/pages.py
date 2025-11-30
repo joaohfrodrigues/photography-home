@@ -6,6 +6,12 @@ from datetime import datetime
 from fasthtml.common import *
 from starlette.responses import FileResponse, HTMLResponse, Response
 
+from backend.db_service import get_all_collections, search_photos
+from components.pages.about import about_page
+from components.pages.collection_detail import collection_detail_page
+from components.pages.collections import collections_page
+from components.pages.home import home_page
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,9 +21,6 @@ def register_page_routes(rt, app):
     @rt('/')
     def get(order: str = 'popular', page: int = 1, q: str = ''):
         """Home page with optional search, ordering, and pagination"""
-        from backend.db_service import search_photos
-        from components.pages.home import home_page
-
         # Use search_photos which handles both search and ordering
         photos, has_more = search_photos(query=q, page=page, per_page=12, order_by=order)
 
@@ -28,22 +31,16 @@ def register_page_routes(rt, app):
     @rt('/collections')
     def get():
         """Collections page"""
-        from components.pages.collections import collections_page
-
         return collections_page()
 
     @rt('/collection/{collection_id}')
     def get(collection_id: str, page: int = 1, q: str = ''):
         """Collection detail page with optional search and pagination"""
-        from components.pages.collection_detail import collection_detail_page
-
         return collection_detail_page(collection_id, page=page, search_query=q)
 
     @rt('/about')
     def get():
         """About page"""
-        from components.pages.about import about_page
-
         return about_page()
 
     @rt('/robots.txt')
@@ -54,9 +51,6 @@ def register_page_routes(rt, app):
     @rt('/sitemap.xml')
     def get():
         """Generate dynamic sitemap"""
-        from backend.db_service import get_all_collections
-
-        # Get collections to include in sitemap
         collections = get_all_collections()
         collection_urls = '\n'.join(
             [
