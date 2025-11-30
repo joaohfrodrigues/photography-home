@@ -91,11 +91,19 @@ def create_lightbox():
                     Div(
                         Div(cls='lightbox-section-title', innerText='Stats'),
                         Div(
-                            Span('Likes', cls='lightbox-meta-label'),
-                            Div(Span('', id='meta-likes'), cls='lightbox-meta-content'),
+                            Span('Views', cls='lightbox-meta-label'),
+                            Div(Span('', id='meta-views'), cls='lightbox-meta-content'),
                             cls='lightbox-meta-item',
+                            id='stats-views',
+                        ),
+                        Div(
+                            Span('Downloads', cls='lightbox-meta-label'),
+                            Div(Span('', id='meta-downloads'), cls='lightbox-meta-content'),
+                            cls='lightbox-meta-item',
+                            id='stats-downloads',
                         ),
                         cls='lightbox-meta',
+                        id='stats-section',
                     ),
                     # Attribution
                     Div(

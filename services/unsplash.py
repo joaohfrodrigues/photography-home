@@ -46,6 +46,11 @@ def _transform_photo_data(photos):
     """Transform raw Unsplash API response into our photo data structure"""
     photo_data = []
     for i, photo in enumerate(photos):
+        # Extract stats from statistics object if available
+        statistics = photo.get('statistics', {})
+        views = statistics.get('views', {}).get('total', 0) if statistics else 0
+        downloads = statistics.get('downloads', {}).get('total', 0) if statistics else 0
+
         photo_data.append(
             {
                 'id': photo['id'],
@@ -56,9 +61,8 @@ def _transform_photo_data(photos):
                 'title': photo.get('description') or photo.get('alt_description') or f'Photo {i+1}',
                 'description': photo.get('description', ''),
                 'alt_description': photo.get('alt_description', ''),
-                'likes': photo.get('likes', 0),
-                'views': photo.get('views', 0),
-                'downloads': photo.get('downloads', 0),
+                'views': views,
+                'downloads': downloads,
                 'width': photo.get('width', 1),
                 'height': photo.get('height', 1),
                 'created_at': photo.get('created_at', ''),

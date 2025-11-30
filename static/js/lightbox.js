@@ -130,7 +130,8 @@ function updateLightboxPhotos() {
             aperture: item.dataset.aperture || '',
             focal: item.dataset.focal || '',
             iso: item.dataset.iso || '',
-            likes: item.dataset.likes || '0',
+            views: item.dataset.views || '0',
+            downloads: item.dataset.downloads || '0',
             dimensions: item.dataset.dimensions || '',
             photographer: item.dataset.photographer || '',
             photographerUrl: item.dataset.photographerUrl || '',
@@ -397,6 +398,37 @@ function updateLightboxContent() {
         tagsContainer.style.display = 'flex';
     } else {
         tagsContainer.style.display = 'none';
+    }
+
+    // Set stats (views, downloads)
+    const viewsElement = document.getElementById('meta-views');
+    const downloadsElement = document.getElementById('meta-downloads');
+    const statsSection = document.getElementById('stats-section');
+
+    const views = parseInt(photo.views || 0);
+    const downloads = parseInt(photo.downloads || 0);
+
+    // Update values with formatting
+    let hasStats = false;
+    if (viewsElement && views > 0) {
+        viewsElement.textContent = views.toLocaleString();
+        document.getElementById('stats-views').style.display = 'flex';
+        hasStats = true;
+    } else if (viewsElement) {
+        document.getElementById('stats-views').style.display = 'none';
+    }
+
+    if (downloadsElement && downloads > 0) {
+        downloadsElement.textContent = downloads.toLocaleString();
+        document.getElementById('stats-downloads').style.display = 'flex';
+        hasStats = true;
+    } else if (downloadsElement) {
+        document.getElementById('stats-downloads').style.display = 'none';
+    }
+
+    // Hide entire stats section if no stats available
+    if (statsSection) {
+        statsSection.style.display = hasStats ? 'block' : 'none';
     }
 
     // Update attribution links
