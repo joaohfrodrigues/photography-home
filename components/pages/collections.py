@@ -4,14 +4,20 @@ from datetime import datetime
 
 from fasthtml.common import *
 
-from backend.db_service import get_all_collections
+from backend.db_service import get_all_collections, get_collection_stats
+from components.ui.badges import get_collection_badges, render_badges
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_navbar
 
 
-def create_collection_card(collection):
-    """Create a card for a single collection"""
+def create_collection_card(collection, badges=None):
+    """Create a card for a single collection
+
+    Args:
+        collection: Collection data dict
+        badges: Optional list of badge dicts from get_collection_badges()
+    """
     # Format the published date if available
     published_date = ''
     if collection.get('published_at'):
@@ -62,17 +68,17 @@ def create_collection_card(collection):
             Div(
                 H3(
                     collection['title'],
-                    style='font-size: 1.6rem; margin-bottom: 0.4rem; color: #fff; font-weight: 300; transition: color 0.3s ease;',
+                    style='font-size: 1.6rem; margin-bottom: 0.4rem; color: var(--text-primary); font-weight: 300; transition: color 0.3s ease;',
                 ),
                 Div(
                     Span(
                         f'{collection["total_photos"]} photos',
-                        style='color: #888; font-size: 0.9rem;',
+                        style='color: var(--text-tertiary); font-size: 0.9rem;',
                     ),
-                    Span(' • ', style='color: #555; padding: 0 0.5rem;')
+                    Span(' • ', style='color: var(--text-muted); padding: 0 0.5rem;')
                     if published_date
                     else None,
-                    Span(published_date, style='color: #888; font-size: 0.9rem;')
+                    Span(published_date, style='color: var(--text-tertiary); font-size: 0.9rem;')
                     if published_date
                     else None,
                     style='display: flex; align-items: center; margin-bottom: 0.75rem;',
@@ -83,10 +89,12 @@ def create_collection_card(collection):
                 collection['description'][:120] + '...'
                 if len(collection['description']) > 120
                 else collection['description'],
-                style='color: #aaa; font-size: 0.9rem; line-height: 1.6; transition: color 0.3s ease;',
+                style='color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; transition: color 0.3s ease;',
             )
             if collection['description']
             else None,
+            # Badges
+            *render_badges(badges) if badges else [],
             cls='collection-info',
             style='padding: 1.75rem;',
         ),
@@ -114,6 +122,13 @@ def collections_page(collections=None):
     if collections is None:
         collections = get_all_collections()
 
+    # Get collection statistics for badges
+    collection_stats = get_collection_stats()
+
+    # Calculate badges for each collection
+    for collection in collections:
+        collection['badges'] = get_collection_badges(collection, collection_stats, collections)
+
     return Html(
         create_head(
             title='Collections | João Rodrigues',
@@ -131,11 +146,11 @@ def collections_page(collections=None):
                         ),
                         P(
                             f'Explore {len(collections)} curated photography collections from my travels and adventures',
-                            style='text-align: center; color: #999; margin-bottom: 4rem; font-size: 1.15rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;',
+                            style='text-align: center; color: var(--text-secondary); margin-bottom: 4rem; font-size: 1.15rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;',
                         ),
                         # Collections grid
                         Div(
-                            *[create_collection_card(c) for c in collections],
+                            *[create_collection_card(c, c.get('badges')) for c in collections],
                             cls='collections-page-grid',
                             style="""
                                 display: grid;
@@ -147,7 +162,7 @@ def collections_page(collections=None):
                         else Div(
                             P(
                                 'No collections found.',
-                                style='text-align: center; color: #666; font-size: 1.1rem;',
+                                style='text-align: center; color: var(--text-muted); font-size: 1.1rem;',
                             )
                         ),
                         cls='container',

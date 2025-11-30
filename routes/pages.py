@@ -6,13 +6,6 @@ from datetime import datetime
 from fasthtml.common import *
 from starlette.responses import FileResponse, HTMLResponse, Response
 
-from components.pages.about import about_page
-from components.pages.collection_detail import collection_detail_page
-from components.pages.collections import collections_page
-from components.pages.gallery import gallery_page
-from components.pages.home import home_page
-from services import fetch_unsplash_photos, fetch_user_collections
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,38 +13,37 @@ def register_page_routes(rt, app):
     """Register all page routes"""
 
     @rt('/')
-    def get(order: str = 'popular'):
-        """Homepage with collection previews and latest photos"""
-        logger.info(f'Homepage accessed - fetching collection previews (order: {order})')
-        collections = fetch_user_collections()
-        logger.info(f'Rendering homepage with {len(collections)} collections')
-        return home_page(collections, order=order)
+    def get(order: str = 'popular', page: int = 1, q: str = ''):
+        """Home page with optional search, ordering, and pagination"""
+        from backend.db_service import search_photos
+        from components.pages.home import home_page
+
+        # Use search_photos which handles both search and ordering
+        photos, has_more = search_photos(query=q, page=page, per_page=12, order_by=order)
+
+        return home_page(
+            latest_photos=photos, order=order, search_query=q, current_page=page, has_more=has_more
+        )
 
     @rt('/collections')
     def get():
-        """All collections grid page"""
-        logger.info('Collections page accessed')
-        collections = fetch_user_collections()
-        logger.info(f'Rendering collections page with {len(collections)} collections')
-        return collections_page(collections)
+        """Collections page"""
+        from components.pages.collections import collections_page
+
+        return collections_page()
 
     @rt('/collection/{collection_id}')
-    def get(collection_id: str):
-        """Collection detail page with photo gallery"""
-        logger.info(f'Collection detail page accessed: {collection_id}')
-        return collection_detail_page(collection_id)
+    def get(collection_id: str, page: int = 1, q: str = ''):
+        """Collection detail page with optional search and pagination"""
+        from components.pages.collection_detail import collection_detail_page
 
-    @rt('/gallery')
-    def get():
-        """Legacy gallery route - all photos"""
-        logger.info('Legacy gallery accessed - fetching photos')
-        photos = fetch_unsplash_photos()
-        logger.info(f'Rendering gallery with {len(photos)} photos')
-        return gallery_page(photos)
+        return collection_detail_page(collection_id, page=page, search_query=q)
 
     @rt('/about')
     def get():
-        """About page route"""
+        """About page"""
+        from components.pages.about import about_page
+
         return about_page()
 
     @rt('/robots.txt')
@@ -62,8 +54,10 @@ def register_page_routes(rt, app):
     @rt('/sitemap.xml')
     def get():
         """Generate dynamic sitemap"""
+        from backend.db_service import get_all_collections
+
         # Get collections to include in sitemap
-        collections = fetch_user_collections()
+        collections = get_all_collections()
         collection_urls = '\n'.join(
             [
                 f"""    <url>
@@ -96,12 +90,6 @@ def register_page_routes(rt, app):
         <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://joaohfrodrigues.com/gallery</loc>
-        <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
     </url>
 </urlset>"""
         return Response(content=sitemap, media_type='application/xml')

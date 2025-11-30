@@ -37,7 +37,7 @@ def about_page():
                             style="""
                                 font-size: 1.1rem;
                                 line-height: 1.8;
-                                color: #ccc;
+                                color: var(--text-secondary);
                             """,
                         ),
                         cls='container',

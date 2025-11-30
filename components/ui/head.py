@@ -41,6 +41,38 @@ def create_head(
         ),
         Meta(name='author', content='João Rodrigues'),
         Meta(charset='utf-8'),
+        # CRITICAL: Theme initialization - must run before ANY CSS loads
+        # Handles localStorage SecurityError gracefully (private browsing, file://, etc.)
+        Script(
+            NotStr("""
+(function() {
+    let savedTheme = null;
+
+    // Try to access localStorage (may fail in private browsing or file://)
+    try {
+        savedTheme = localStorage.getItem('theme');
+    } catch (e) {
+        // localStorage blocked - will use OS preference or fallback
+        console.warn('localStorage blocked, using OS preference');
+    }
+
+    if (savedTheme) {
+        // User has explicitly chosen a theme
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    } else {
+        // No saved preference - respect OS/browser preference
+        try {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = prefersDark ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+            // Fallback to dark if media query fails
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    }
+})();
+        """)
+        ),
         # Open Graph / Social Media
         Meta(property='og:type', content='website'),
         Meta(property='og:title', content=title),
@@ -69,6 +101,8 @@ def create_head(
         Link(rel='stylesheet', href='/static/css/styles.css'),
         # Structured data
         Script(structured_data, type='application/ld+json'),
+        # Theme toggle functions
+        Script(src='/static/js/theme-toggle.js'),
         # JavaScript (deferred)
         Script(src='/static/js/sticky-header.js', defer=True),
         Script(src='/static/js/lightbox.js', defer=True),

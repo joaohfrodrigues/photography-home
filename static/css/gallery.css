@@ -21,21 +21,21 @@
     width: 100%;
     padding: 1rem 1.25rem;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 1rem;
     transition: all 0.3s ease;
     outline: none;
 }
 
 .filter-input::placeholder {
-    color: #555;
+    color: var(--text-muted);
 }
 
 .filter-input:focus {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-primary);
+    background: var(--card-bg);
 }
 
 .filters-row {
@@ -53,9 +53,9 @@
 .filter-select {
     padding: 0.6rem 1rem;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    color: #999;
+    color: var(--text-tertiary);
     font-size: 0.85rem;
     transition: all 0.3s ease;
     outline: none;
@@ -68,27 +68,27 @@
 }
 
 .filter-select:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ccc;
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
 }
 
 .filter-select:focus {
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #fff;
+    border-color: var(--border-primary);
+    color: var(--text-primary);
 }
 
 .filter-select option {
-    background: #1a1a1a;
-    color: #fff;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     padding: 0.5rem;
 }
 
 .filter-reset {
     padding: 0.6rem 1rem;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    color: #999;
+    color: var(--text-tertiary);
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -98,8 +98,8 @@
 }
 
 .filter-reset:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ccc;
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
 }
 
 .reset-text {
@@ -113,7 +113,7 @@
 }
 
 .results-count {
-    color: #555;
+    color: var(--text-muted);
     font-size: 0.8rem;
     letter-spacing: 0.05em;
 }
@@ -131,10 +131,10 @@
     overflow: hidden;
     border-radius: 12px;
     cursor: pointer;
-    background: #1a1a1a;
+    background: var(--bg-secondary);
     opacity: 0;
     animation: fadeInScale 0.6s ease-out forwards;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 2.5rem;
     break-inside: avoid;
@@ -179,6 +179,7 @@
     opacity: 0;
     transition: opacity 0.4s ease;
     z-index: 1;
+    pointer-events: none;
 }
 
 .gallery-item:hover::before {
@@ -187,7 +188,15 @@
 
 .gallery-item:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='light'] .gallery-item {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .gallery-item:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .gallery-item img {
@@ -207,7 +216,7 @@
     left: 0;
     right: 0;
     padding: 1.5rem;
-    color: #fff;
+    color: #fff !important; /* Always white - sits on dark gradient overlay */
     font-size: 0.9rem;
     font-weight: 300;
     opacity: 0;
@@ -224,18 +233,32 @@
 
 .photo-attribution {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    padding: 0.5rem 1rem;
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
+    bottom: 3.5rem;
+    left: 0;
+    right: 0;
+    padding: 0 1.5rem 0.5rem 1.5rem;
+    color: #fff !important; /* Always white - sits on dark gradient */
     font-size: 0.75rem;
-    border-radius: 4px;
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(10px);
     transition: all 0.4s ease;
     z-index: 2;
-    backdrop-filter: blur(10px);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.photo-attribution span,
+.photo-attribution a {
+    color: #fff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.photo-attribution a {
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+.photo-attribution a:hover {
+    opacity: 1;
 }
 
 .gallery-item:hover .photo-attribution {

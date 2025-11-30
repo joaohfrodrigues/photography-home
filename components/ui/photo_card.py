@@ -151,7 +151,7 @@ def create_photo_item(photo, index=0, layout='gallery'):
 
     # Build the photo item
     if layout == 'gallery':
-        # Gallery layout (collection pages)
+        # Gallery layout (collection pages) - unified with homepage
         return Div(
             Img(src=img_src, alt=photo['title'], loading=img_loading),
             Div(photo['title'], cls='photo-title'),
@@ -163,7 +163,6 @@ def create_photo_item(photo, index=0, layout='gallery'):
                     href=photographer_url,
                     target='_blank',
                     rel='noopener noreferrer',
-                    style='color: #fff; text-decoration: underline;',
                 ),
                 Span(' on '),
                 A(
@@ -171,7 +170,6 @@ def create_photo_item(photo, index=0, layout='gallery'):
                     href='https://unsplash.com',
                     target='_blank',
                     rel='noopener noreferrer',
-                    style='color: #fff; text-decoration: underline;',
                 ),
                 cls='photo-attribution',
             ),
@@ -180,10 +178,7 @@ def create_photo_item(photo, index=0, layout='gallery'):
             **data_attrs,
         )
     else:
-        # Grid layout (homepage masonry)
-        views = photo.get('views', 0)
-        downloads = photo.get('downloads', 0)
-
+        # Grid layout (homepage masonry) - unified with collection pages
         return Div(
             Img(
                 src=img_src,
@@ -194,71 +189,44 @@ def create_photo_item(photo, index=0, layout='gallery'):
                     height: 100%;
                     object-fit: cover;
                     display: block;
-                    transition: transform 0.3s ease;
+                    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
                 """,
             ),
-            # Hidden title element for lightbox
-            Div(photo['title'], cls='photo-title', style='display: none;'),
-            # Overlay with title and info
+            # Photo title
+            Div(photo['title'], cls='photo-title'),
+            # Attribution overlay
             Div(
-                H3(
-                    photo['title'],
-                    style='font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: 300;',
+                Span('Photo by '),
+                A(
+                    photographer_name,
+                    href=photographer_url,
+                    target='_blank',
+                    rel='noopener noreferrer',
                 ),
-                P(
-                    location,
-                    style='font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 0.25rem;',
-                )
-                if location
-                else None,
-                P(
-                    f'Tags: {tags_str[:50]}...' if len(tags_str) > 50 else f'Tags: {tags_str}',
-                    style='font-size: 0.75rem; color: rgba(255, 255, 255, 0.6);',
-                )
-                if tags_str
-                else None,
-                cls='photo-overlay',
-                style="""
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    padding: 1.5rem;
-                    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
-                """,
+                Span(' on '),
+                A(
+                    'Unsplash',
+                    href='https://unsplash.com',
+                    target='_blank',
+                    rel='noopener noreferrer',
+                ),
+                cls='photo-attribution',
             ),
-            # Stats overlay (views and downloads)
-            Div(
-                Div(
-                    Span('👁️', style='opacity: 0.8;'),
-                    Span(f'{views:,}' if views > 0 else '—', style='margin-left: 4px;'),
-                    cls='stat-item',
-                )
-                if views > 0
-                else None,
-                Div(
-                    Span('⬇️', style='opacity: 0.8;'),
-                    Span(f'{downloads:,}' if downloads > 0 else '—', style='margin-left: 4px;'),
-                    cls='stat-item',
-                )
-                if downloads > 0
-                else None,
-                cls='photo-stats',
-            )
-            if (views > 0 or downloads > 0)
-            else None,
             cls=css_class,
             style=style,
-            onmouseover="this.querySelector('.photo-overlay').style.opacity='1'; this.querySelector('img').style.transform='scale(1.05)'",
-            onmouseout="this.querySelector('.photo-overlay').style.opacity='0'; this.querySelector('img').style.transform='scale(1)'",
             **data_attrs,
         )
 
 
 def create_photo_container(
-    photos, layout='gallery', title=None, show_filters=False, show_search=False, show_count=True
+    photos,
+    layout='gallery',
+    title=None,
+    show_filters=False,
+    show_search=False,
+    show_count=True,
+    current_order='popular',
+    search_query='',
 ):
     """
     Create a unified photo container that works for both gallery and grid layouts.
@@ -270,6 +238,8 @@ def create_photo_container(
         show_filters: Whether to show filter controls
         show_search: Whether to show search bar
         show_count: Whether to show results count
+        current_order: Current sort order for search bar
+        search_query: Current search query for search bar
 
     Returns:
         Div element with complete photo container structure
@@ -324,13 +294,15 @@ def create_photo_container(
 
         return Div(
             # Search bar (if enabled)
-            create_search_bar() if show_search else None,
+            create_search_bar(current_order=current_order, search_query=search_query)
+            if show_search
+            else None,
             # Results count
             Div(
                 Span(
                     f'{len(photos)} photos',
                     id='results-count',
-                    style='color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;',
+                    style='color: var(--text-secondary); font-size: 0.9rem;',
                 ),
                 style='margin-bottom: 1.5rem;',
             )
@@ -353,7 +325,7 @@ def create_photo_container(
                         width: 40px;
                         height: 40px;
                         border: 3px solid rgba(255, 255, 255, 0.1);
-                        border-top-color: #fff;
+                        border-top-color: var(--text-primary);
                         border-radius: 50%;
                         animation: spin 1s linear infinite;
                     """

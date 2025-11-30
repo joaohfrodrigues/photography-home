@@ -22,6 +22,15 @@ CACHE_DURATION_MINUTES = int(os.getenv('CACHE_DURATION_MINUTES', '30'))
 # EXIF loading strategy
 EXIF_LAZY_LOADING = os.getenv('EXIF_LAZY_LOADING', 'false').lower() == 'true'
 
+# Collection badges configuration
+# Add collection IDs here to mark them as "Editor's Pick"
+# To find collection IDs, check: http://localhost:5001/collections or run:
+#   sqlite3 data/photos.db "SELECT id, title FROM collections;"
+FEATURED_COLLECTION_IDS = [
+    # Example: 'GRVDIk0USf4',  # 25' Valencia
+    # Example: 'py2j-CBPSoM',  # 24' Gerês
+]
+
 # Log configuration status
 logger.info(f'Unsplash configured: {bool(UNSPLASH_ACCESS_KEY)}')
 logger.info(f'Unsplash username: {UNSPLASH_USERNAME}')

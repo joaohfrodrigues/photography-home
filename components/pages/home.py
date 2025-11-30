@@ -1,27 +1,20 @@
 """Home page component - Hybrid layout with latest collections and featured photos"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fasthtml.common import *
 
-from backend.db_service import get_all_collections, get_collection_photos, get_latest_photos
+from backend.db_service import (
+    get_all_collections,
+    get_collection_photos,
+    get_collection_stats,
+)
+from components.ui.badges import get_collection_badges, render_badges
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_hero, create_navbar
 from components.ui.lightbox import create_lightbox
 from components.ui.photo_grid import create_photo_grid
-
-
-def _is_recently_updated(date_str):
-    """Check if a date is within the last 7 days"""
-    if not date_str:
-        return False
-    try:
-        updated = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-        now = datetime.now(timezone.utc)
-        return (now - updated) < timedelta(days=7)
-    except (ValueError, AttributeError):
-        return False
 
 
 def _format_date(date_str):  # noqa: PLR0911
@@ -52,8 +45,14 @@ def _format_date(date_str):  # noqa: PLR0911
         return 'recently'
 
 
-def create_collection_card(collection, index):
-    """Create a compact collection card with carousel"""
+def create_collection_card(collection, index, badges=None):
+    """Create a compact collection card with carousel
+
+    Args:
+        collection: Collection data dict
+        index: Card index for animation timing
+        badges: List of badge dicts (optional)
+    """
     collection_id = collection['id']
     photos, _ = get_collection_photos(collection_id, page=1, per_page=6)
 
@@ -93,7 +92,9 @@ def create_collection_card(collection, index):
             ),
             # Previous arrow
             Button(
-                Span('‹', style='display: block; transform: translateX(-1px);'),
+                NotStr(
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; display: block; flex-shrink: 0;"><polyline points="15 18 9 12 15 6"></polyline></svg>'
+                ),
                 cls='carousel-arrow carousel-prev',
                 style="""
                     position: absolute;
@@ -106,16 +107,13 @@ def create_collection_card(collection, index):
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
-                    font-size: 24px;
                     cursor: pointer;
                     z-index: 3;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    display: grid;
+                    place-items: center;
                     opacity: 0;
                     transition: opacity 0.3s ease, background 0.2s ease;
                     padding: 0;
-                    line-height: 1;
                     user-select: none;
                     -webkit-tap-highlight-color: transparent;
                 """,
@@ -123,7 +121,9 @@ def create_collection_card(collection, index):
             ),
             # Next arrow
             Button(
-                Span('›', style='display: block; transform: translateX(1px);'),
+                NotStr(
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; display: block; flex-shrink: 0;"><polyline points="9 18 15 12 9 6"></polyline></svg>'
+                ),
                 cls='carousel-arrow carousel-next',
                 style="""
                     position: absolute;
@@ -136,16 +136,13 @@ def create_collection_card(collection, index):
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
-                    font-size: 24px;
                     cursor: pointer;
                     z-index: 3;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    display: grid;
+                    place-items: center;
                     opacity: 0;
                     transition: opacity 0.3s ease, background 0.2s ease;
                     padding: 0;
-                    line-height: 1;
                     user-select: none;
                     -webkit-tap-highlight-color: transparent;
                 """,
@@ -170,32 +167,8 @@ def create_collection_card(collection, index):
                     -webkit-backdrop-filter: blur(8px);
                 """,
             ),
-            # Recently Updated badge (if updated in last 7 days)
-            *(
-                [
-                    Div(
-                        '✨ Recently Updated',
-                        cls='recently-updated-badge',
-                        style="""
-                        position: absolute;
-                        top: 12px;
-                        left: 12px;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 6px 12px;
-                        border-radius: 20px;
-                        font-size: 0.8rem;
-                        font-weight: 600;
-                        z-index: 2;
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
-                        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-                    """,
-                    )
-                ]
-                if _is_recently_updated(collection.get('updated_at', ''))
-                else []
-            ),
+            # Multiple badges support (stacked vertically)
+            *render_badges(badges),
             # Carousel indicators (dots)
             Div(
                 *[
@@ -234,14 +207,14 @@ def create_collection_card(collection, index):
         Div(
             H3(
                 collection['title'],
-                style='font-size: 1.3rem; margin-bottom: 0.5rem; color: #fff; font-weight: 300;',
+                style='font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 300;',
             ),
             Div(
-                Span(f'{collection["total_photos"]} photos', style='color: #888;'),
-                Span(' • ', style='color: #555; margin: 0 6px;'),
+                Span(f'{collection["total_photos"]} photos', style='color: var(--text-tertiary);'),
+                Span(' • ', style='color: var(--text-muted); margin: 0 6px;'),
                 Span(
                     f'Updated {_format_date(collection.get("updated_at", ""))}',
-                    style='color: #888;',
+                    style='color: var(--text-tertiary);',
                 ),
                 style='font-size: 0.85rem; display: flex; align-items: center;',
             ),
@@ -266,19 +239,48 @@ def create_collection_card(collection, index):
     )
 
 
-def home_page(collections=None, latest_photos=None, order='popular'):
-    """Render the home page with latest collections and featured photos grid"""
+def home_page(
+    collections=None,
+    latest_photos=None,
+    order='popular',
+    search_query='',
+    current_page=1,
+    has_more=False,
+):
+    """Render the home page with latest collections and featured photos grid
+
+    Args:
+        collections: List of collections (fetched if None)
+        latest_photos: List of photos (fetched if None)
+        order: Sort order - 'popular', 'latest', or 'oldest'
+        search_query: Search query string
+        current_page: Current page number
+        has_more: Whether there are more photos to load
+    """
     if collections is None:
         collections = get_all_collections()
 
-    # Filter for featured collections only (first 3-4)
-    featured_collections = [c for c in collections if c.get('featured', False)]
+    # Get collection statistics for badge calculations
+    collection_stats = get_collection_stats()
+
+    # Get 3 most recent collections sorted by created_at (published_at)
+    featured_collections = sorted(
+        collections, key=lambda c: c.get('published_at', ''), reverse=True
+    )[:3]
+
+    # Calculate badges for each featured collection
+    collection_badges = {}
+    for collection in featured_collections:
+        badges = get_collection_badges(collection, collection_stats, collections)
+        collection_badges[collection['id']] = badges
 
     # Fetch latest photos if not provided
     if latest_photos is None:
-        latest_photos, has_more = get_latest_photos(page=1, per_page=12, order_by=order)
-    else:
-        has_more = False  # Assume no more if photos were provided
+        from backend.db_service import search_photos
+
+        latest_photos, has_more = search_photos(
+            query=search_query, page=current_page, per_page=12, order_by=order
+        )
 
     return Html(
         create_head(),
@@ -297,21 +299,23 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                             ),
                             P(
                                 'Curated photo series from my portfolio',
-                                style='color: rgba(255, 255, 255, 0.6); font-size: 1rem; margin-bottom: 3rem;',
+                                style='color: var(--text-secondary); font-size: 1rem; margin-bottom: 3rem;',
                             ),
                             style='text-align: center;',
                         ),
-                        # Featured collections grid
+                        # Featured collections grid (3 columns matching photo grid)
                         Div(
                             *[
-                                create_collection_card(c, i)
+                                create_collection_card(
+                                    c, i, badges=collection_badges.get(c['id'], [])
+                                )
                                 for i, c in enumerate(featured_collections)
                             ],
                             cls='featured-collections-grid',
                             style="""
                                 display: grid;
-                                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-                                gap: 2rem;
+                                grid-template-columns: repeat(3, 1fr);
+                                gap: 1.5rem;
                                 margin-bottom: 2rem;
                             """,
                         ),
@@ -322,11 +326,11 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                                 href='/collections',
                                 style="""
                                     display: inline-block;
-                                    padding: 0.875rem 2rem;
+                                    padding: 1rem 2.5rem;
                                     background: rgba(255, 255, 255, 0.05);
                                     border: 1px solid rgba(255, 255, 255, 0.1);
                                     border-radius: 8px;
-                                    color: #fff;
+                                    color: var(--text-primary);
                                     text-decoration: none;
                                     font-size: 0.95rem;
                                     transition: all 0.3s ease;
@@ -351,17 +355,23 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                             ),
                             P(
                                 'My best work, curated by popularity and views',
-                                style='color: rgba(255, 255, 255, 0.6); font-size: 1rem; margin-bottom: 3rem;',
+                                style='color: var(--text-secondary); font-size: 1rem; margin-bottom: 3rem;',
                             ),
                             style='text-align: center;',
                         ),
                         # Photo grid with search
-                        create_photo_grid(latest_photos, show_search=True),
-                        # Load more button for infinite scroll
+                        create_photo_grid(
+                            latest_photos,
+                            show_search=True,
+                            current_order=order,
+                            search_query=search_query,
+                        ),
+                        # Load more button for pagination
                         Div(
-                            Button(
-                                'Load More Photos',
-                                id='load-more-btn',
+                            A(
+                                'Load More Photos →',
+                                href=f'/?order={order}&page={current_page + 1}'
+                                + (f'&q={search_query}' if search_query else ''),
                                 cls='load-more-btn',
                                 style="""
                                     display: block;
@@ -370,17 +380,14 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                                     background: rgba(255, 255, 255, 0.05);
                                     border: 1px solid rgba(255, 255, 255, 0.15);
                                     border-radius: 8px;
-                                    color: #fff;
+                                    color: var(--text-primary);
                                     font-size: 1rem;
-                                    cursor: pointer;
+                                    text-decoration: none;
+                                    text-align: center;
                                     transition: all 0.3s ease;
                                 """,
                                 onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.25)'",
                                 onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.15)'",
-                                **{
-                                    'data-page': '2',
-                                    'data-order': order,
-                                },
                             ),
                             id='load-more-container',
                             style='text-align: center;' if has_more else 'display: none;',
@@ -390,141 +397,11 @@ def home_page(collections=None, latest_photos=None, order='popular'):
                     ),
                 ),
             ),
-            # Carousel script
-            Script("""
-                // Carousel with arrows and auto-rotate on hover
-                document.addEventListener('DOMContentLoaded', function() {
-                    const carousels = document.querySelectorAll('.collection-carousel');
-
-                    carousels.forEach(carousel => {
-                        const images = carousel.querySelectorAll('.carousel-image');
-                        const dots = carousel.querySelectorAll('.carousel-dot');
-                        const prevBtn = carousel.querySelector('.carousel-prev');
-                        const nextBtn = carousel.querySelector('.carousel-next');
-                        const card = carousel.closest('.collection-card');
-                        let currentIndex = 0;
-                        let intervalId;
-                        let isTransitioning = false;
-
-                        function showImage(index) {
-                            if (isTransitioning) return;
-                            isTransitioning = true;
-
-                            // Fade out current image
-                            const currentImg = images[currentIndex];
-                            if (currentImg) {
-                                currentImg.style.opacity = '0';
-                            }
-
-                            // Wait for fade out, then switch and fade in
-                            setTimeout(() => {
-                                images.forEach((img, i) => {
-                                    if (i === index) {
-                                        img.style.display = 'block';
-                                        // Force reflow for animation
-                                        void img.offsetWidth;
-                                        img.style.opacity = '1';
-                                    } else {
-                                        img.style.display = 'none';
-                                        img.style.opacity = '0';
-                                    }
-                                });
-
-                                dots.forEach((dot, i) => {
-                                    dot.style.background = i === index ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)';
-                                });
-
-                                // Allow next transition after animation completes
-                                setTimeout(() => {
-                                    isTransitioning = false;
-                                }, 250);
-                            }, 250); // Half of the transition duration
-                        }
-
-                        function nextImage() {
-                            if (isTransitioning) return;
-                            const prevIndex = currentIndex;
-                            currentIndex = (currentIndex + 1) % images.length;
-                            showImage(currentIndex);
-                        }
-
-                        function prevImage() {
-                            if (isTransitioning) return;
-                            const prevIndex = currentIndex;
-                            currentIndex = (currentIndex - 1 + images.length) % images.length;
-                            showImage(currentIndex);
-                        }
-
-                        function startCarousel() {
-                            if (!intervalId) {
-                                intervalId = setInterval(nextImage, 4000);
-                            }
-                        }
-
-                        function stopCarousel() {
-                            if (intervalId) {
-                                clearInterval(intervalId);
-                                intervalId = null;
-                            }
-                        }
-
-                        // Arrow click handlers
-                        prevBtn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            prevImage();
-                            stopCarousel();
-                        });
-
-                        nextBtn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            nextImage();
-                            stopCarousel();
-                        });
-
-                        // Dot click handlers
-                        dots.forEach((dot, index) => {
-                            dot.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (currentIndex !== index && !isTransitioning) {
-                                    currentIndex = index;
-                                    showImage(currentIndex);
-                                }
-                                stopCarousel();
-                            });
-                        });
-
-                        // Show arrows on card hover
-                        card.addEventListener('mouseenter', () => {
-                            prevBtn.style.opacity = '1';
-                            nextBtn.style.opacity = '1';
-                            startCarousel();
-                        });
-
-                        card.addEventListener('mouseleave', () => {
-                            prevBtn.style.opacity = '0';
-                            nextBtn.style.opacity = '0';
-                            stopCarousel();
-                        });
-
-                        // Arrow hover effects
-                        [prevBtn, nextBtn].forEach(btn => {
-                            btn.addEventListener('mouseenter', () => {
-                                btn.style.background = 'rgba(0, 0, 0, 0.7)';
-                            });
-                            btn.addEventListener('mouseleave', () => {
-                                btn.style.background = 'rgba(0, 0, 0, 0.5)';
-                            });
-                        });
-                    });
-                });
-            """),
-            # Load search filter script
-            Script(src='/static/js/search-filter.js'),
-            # Load infinite scroll script (works for both homepage and collections)
-            Script(src='/static/js/infinite-scroll.js') if has_more else None,
+            # Load carousel script
+            Script(src='/static/js/carousel.js'),
+            # AJAX search handler for in-place updates
+            Script(src='/static/js/search-handler.js'),
+            # Client-side search and API-based infinite scroll removed in favor of server-side pagination
             # Lightbox script already loaded in head.py
             create_footer(),
             create_lightbox(),

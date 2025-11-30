@@ -10,7 +10,7 @@ def create_lightbox():
             # Close button with SVG X icon
             Button(
                 NotStr(
-                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
                 ),
                 cls='lightbox-close',
                 onclick='closeLightbox()',
@@ -18,7 +18,7 @@ def create_lightbox():
             # Previous button with SVG left arrow
             Button(
                 NotStr(
-                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>'
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>'
                 ),
                 cls='lightbox-nav lightbox-prev',
                 onclick='navigateLightbox(-1)',
@@ -26,7 +26,7 @@ def create_lightbox():
             # Next button with SVG right arrow
             Button(
                 NotStr(
-                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>'
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>'
                 ),
                 cls='lightbox-nav lightbox-next',
                 onclick='navigateLightbox(1)',
@@ -42,7 +42,7 @@ def create_lightbox():
                         '',
                         id='lightbox-index',
                         cls='lightbox-index',
-                        style='font-size: 0.9rem; color: #888; margin: 0.5rem 0;',
+                        style='font-size: 0.9rem; color: var(--text-tertiary); margin: 0.5rem 0;',
                     ),
                     P('', id='lightbox-description', cls='lightbox-description'),
                     # Basic Info
@@ -138,7 +138,7 @@ def create_lightbox():
                                     href='#',
                                     target='_blank',
                                     rel='noopener noreferrer',
-                                    style='color: #aaa; text-decoration: underline;',
+                                    style='color: var(--text-secondary); text-decoration: underline;',
                                 ),
                                 Span(' on '),
                                 A(
@@ -146,9 +146,9 @@ def create_lightbox():
                                     href='https://unsplash.com',
                                     target='_blank',
                                     rel='noopener noreferrer',
-                                    style='color: #aaa; text-decoration: underline;',
+                                    style='color: var(--text-secondary); text-decoration: underline;',
                                 ),
-                                style='font-size: 0.85rem; color: #666; margin: 0;',
+                                style='font-size: 0.85rem; color: var(--text-muted); margin: 0;',
                             ),
                             Div(
                                 A(
@@ -157,7 +157,7 @@ def create_lightbox():
                                     href='#',
                                     target='_blank',
                                     rel='noopener noreferrer',
-                                    style='color: #888; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-top: 0.5rem;',
+                                    style='color: var(--text-tertiary); text-decoration: none; font-size: 0.85rem; display: inline-block; margin-top: 0.5rem;',
                                 ),
                             ),
                             cls='lightbox-meta-item',

@@ -199,37 +199,99 @@ def get_all_collections() -> list[dict]:
         return collections
 
 
-def search_photos(query: str, limit: int = 100) -> list[dict]:
+def search_photos(
+    query: str = '',
+    page: int = 1,
+    per_page: int = 30,
+    order_by: str = 'popular',
+    collection_id: str = None,
+) -> tuple[list[dict], bool]:
     """
-    Search photos using full-text search.
+    Search and filter photos with pagination.
 
     Args:
-        query: Search query
-        limit: Maximum results to return
+        query: Search query (empty string for no search)
+        page: Page number (1-indexed)
+        per_page: Photos per page
+        order_by: 'popular', 'latest', or 'oldest'
+        collection_id: Optional collection ID to filter by
 
     Returns:
-        List of matching photos
+        Tuple of (photos list, has_more boolean)
     """
+    offset = (page - 1) * per_page
+
+    # Determine order clause
+    if order_by == 'latest':
+        order_clause = 'created_at DESC'
+    elif order_by == 'oldest':
+        order_clause = 'created_at ASC'
+    else:  # popular
+        order_clause = 'views DESC, created_at DESC'
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Use FTS5 for search
-        cursor.execute(
-            """
-            SELECT p.* FROM photos p
-            JOIN photos_fts fts ON p.rowid = fts.rowid
-            WHERE photos_fts MATCH ?
-            ORDER BY rank
-            LIMIT ?
-        """,
-            (query, limit),
-        )
+        if query:
+            # FTS5 search with ordering
+            if collection_id:
+                # Search within collection
+                cursor.execute(  # nosec B608 - order_clause is from whitelisted values
+                    f"""
+                    SELECT p.* FROM photos p
+                    JOIN photos_fts fts ON p.rowid = fts.rowid
+                    JOIN photo_collections pc ON p.id = pc.photo_id
+                    WHERE photos_fts MATCH ? AND pc.collection_id = ?
+                    ORDER BY {order_clause}
+                    LIMIT ? OFFSET ?
+                """,
+                    (query, collection_id, per_page + 1, offset),
+                )
+            else:
+                # Search all photos
+                cursor.execute(  # nosec B608 - order_clause is from whitelisted values
+                    f"""
+                    SELECT p.* FROM photos p
+                    JOIN photos_fts fts ON p.rowid = fts.rowid
+                    WHERE photos_fts MATCH ?
+                    ORDER BY {order_clause}
+                    LIMIT ? OFFSET ?
+                """,
+                    (query, per_page + 1, offset),
+                )
+        # No search, just list with ordering
+        elif collection_id:
+            cursor.execute(  # nosec B608 - order_clause is from whitelisted values
+                f"""
+                    SELECT p.* FROM photos p
+                    JOIN photo_collections pc ON p.id = pc.photo_id
+                    WHERE pc.collection_id = ?
+                    ORDER BY {order_clause}
+                    LIMIT ? OFFSET ?
+                """,
+                (collection_id, per_page + 1, offset),
+            )
+        else:
+            cursor.execute(  # nosec B608 - order_clause is from whitelisted values
+                f"""
+                    SELECT * FROM photos
+                    ORDER BY {order_clause}
+                    LIMIT ? OFFSET ?
+                """,
+                (per_page + 1, offset),
+            )
 
         rows = cursor.fetchall()
-        photos = [_row_to_dict(row) for row in rows]
+        has_more = len(rows) > per_page
+        photos = [_row_to_dict(row) for row in rows[:per_page]]
 
-        logger.info(f"Search '{query}' returned {len(photos)} results")
-        return photos
+        search_str = f" matching '{query}'" if query else ''
+        collection_str = f' in collection {collection_id}' if collection_id else ''
+        logger.info(
+            f'Fetched {len(photos)} photos{search_str}{collection_str} (page {page}, order: {order_by}, has_more: {has_more})'
+        )
+
+        return photos, has_more
 
 
 def get_photo_by_id(photo_id: str) -> dict | None:
@@ -270,3 +332,33 @@ def get_database_stats() -> dict:
             'total_views': total_views,
             'total_downloads': total_downloads,
         }
+
+
+def get_collection_stats() -> dict:
+    """Get statistics for each collection (total views, downloads, etc.)"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                c.id,
+                c.total_photos,
+                COALESCE(SUM(p.views), 0) as total_views,
+                COALESCE(SUM(p.downloads), 0) as total_downloads,
+                COALESCE(SUM(p.likes), 0) as total_likes
+            FROM collections c
+            LEFT JOIN photo_collections pc ON c.id = pc.collection_id
+            LEFT JOIN photos p ON pc.photo_id = p.id
+            GROUP BY c.id
+        """)
+
+        stats = {}
+        for row in cursor.fetchall():
+            stats[row[0]] = {
+                'total_photos': row[1],
+                'total_views': row[2],
+                'total_downloads': row[3],
+                'total_likes': row[4],
+            }
+
+        return stats

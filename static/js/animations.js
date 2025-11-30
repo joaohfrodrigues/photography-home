@@ -46,7 +46,8 @@ function initBackToTop() {
     // Create button
     const backToTopBtn = document.createElement('button');
     backToTopBtn.id = 'back-to-top';
-    backToTopBtn.innerHTML = '↑';
+    backToTopBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; display: block;"><polyline points="18 15 12 9 6 15"></polyline></svg>';
     backToTopBtn.setAttribute('aria-label', 'Back to top');
     backToTopBtn.style.cssText = `
         position: fixed;
@@ -60,7 +61,6 @@ function initBackToTop() {
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: white;
-        font-size: 24px;
         cursor: pointer;
         opacity: 0;
         transform: translateY(20px);
@@ -68,6 +68,9 @@ function initBackToTop() {
         z-index: 1000;
         pointer-events: none;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: grid;
+        place-items: center;
+        padding: 0;
     `;
     document.body.appendChild(backToTopBtn);
 

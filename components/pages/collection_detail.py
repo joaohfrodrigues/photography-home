@@ -2,115 +2,24 @@
 
 from fasthtml.common import *
 
+from backend.db_service import get_all_collections, search_photos
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_navbar
 from components.ui.lightbox import create_lightbox
-from config import EXIF_LAZY_LOADING
-from services import fetch_collection_photos, fetch_user_collections
+from components.ui.photo_card import create_photo_item
 
 
-def create_collection_gallery_item(photo, index):
-    """Create a single gallery item for collection view"""
-    # Use raw Unsplash URL
-    img_src = photo.get('url_raw', photo['url'])
+def collection_detail_page(collection_id: str, page: int = 1, search_query: str = ''):
+    """Render a collection detail page with search and pagination support
 
-    # Calculate aspect ratio
-    width = photo.get('width', 1)
-    height = photo.get('height', 1)
-    aspect_ratio = width / height
-
-    # Format camera info
-    camera_full = 'Loading...' if EXIF_LAZY_LOADING else 'N/A'
-
-    # Format location
-    location_data = photo.get('location', {})
-    location_parts = [
-        location_data.get('name'),
-        location_data.get('city'),
-        location_data.get('country'),
-    ]
-    location_str = ', '.join([p for p in location_parts if p]) or ''
-
-    # Format tags
-    tags = photo.get('tags', [])
-    tags_html = (
-        ''.join([f'<span class="lightbox-tag">{tag}</span>' for tag in tags[:10]]) if tags else ''
-    )
-    tags_str = ','.join(tags[:10]) if tags else ''
-
-    # Extract year
-    year = photo.get('created_at', '')[:4] if photo.get('created_at') else ''
-
-    # Determine orientation
-    orientation = 'square'
-    if width > height * 1.1:
-        orientation = 'landscape'
-    elif height > width * 1.1:
-        orientation = 'portrait'
-
-    # Photographer info
-    photographer_name = photo.get('user', {}).get('name', 'Unknown')
-    photographer_url = photo.get('user', {}).get('profile_url', '')
-    photo_unsplash_url = photo.get('links', {}).get('html', '')
-
-    return Div(
-        Img(src=img_src, alt=photo['title'], loading='lazy'),
-        Div(photo['title'], cls='photo-title'),
-        # Attribution overlay
-        Div(
-            Span('Photo by '),
-            A(
-                photographer_name,
-                href=photographer_url,
-                target='_blank',
-                rel='noopener noreferrer',
-                style='color: #fff; text-decoration: underline;',
-            ),
-            Span(' on '),
-            A(
-                'Unsplash',
-                href='https://unsplash.com',
-                target='_blank',
-                rel='noopener noreferrer',
-                style='color: #fff; text-decoration: underline;',
-            ),
-            cls='photo-attribution',
-        ),
-        cls='gallery-item',
-        style=f'aspect-ratio: {aspect_ratio:.3f};',
-        **{
-            'data-index': index,
-            'data-photo-id': photo.get('id', ''),
-            'data-download-location': photo.get('links', {}).get('download_location', ''),
-            'data-description': photo.get('description', ''),
-            'data-title': photo['title'].lower(),
-            'data-tags': tags_html,
-            'data-tags-text': tags_str.lower(),
-            'data-created': photo.get('created_at', ''),
-            'data-year': year,
-            'data-orientation': orientation,
-            'data-color': photo.get('color', ''),
-            'data-location': location_str,
-            'data-camera': camera_full,
-            'data-exposure': 'N/A' if not EXIF_LAZY_LOADING else 'Loading...',
-            'data-aperture': 'N/A' if not EXIF_LAZY_LOADING else 'Loading...',
-            'data-focal': 'N/A' if not EXIF_LAZY_LOADING else 'Loading...',
-            'data-iso': 'N/A' if not EXIF_LAZY_LOADING else 'Loading...',
-            'data-likes': photo.get('likes', 0),
-            'data-dimensions': f'{width} × {height}',
-            'data-photographer': photographer_name,
-            'data-photographer-url': photographer_url,
-            'data-unsplash-url': photo_unsplash_url,
-            'data-lazy-exif': 'true' if EXIF_LAZY_LOADING else 'false',
-        },
-    )
-
-
-def collection_detail_page(collection_id: str, page: int = 1):
-    """Render a collection detail page with infinite scroll support"""
+    Args:
+        collection_id: Collection ID to display
+        page: Page number (1-indexed)
+        search_query: Optional search query to filter photos in collection
+    """
     # Get collection info
-    collections = fetch_user_collections()
+    collections = get_all_collections()
     collection = next((c for c in collections if c['id'] == collection_id), None)
 
     if not collection:
@@ -125,7 +34,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
                             H1('Collection Not Found', style='text-align: center;'),
                             P(
                                 'The requested collection could not be found.',
-                                style='text-align: center; color: #888;',
+                                style='text-align: center; color: var(--text-tertiary);',
                             ),
                             A(
                                 NotStr(
@@ -139,14 +48,14 @@ def collection_detail_page(collection_id: str, page: int = 1):
                                     gap: 0.5rem;
                                     margin-top: 2rem;
                                     padding: 0.75rem 1.5rem;
-                                    color: #fff;
+                                    color: var(--text-primary);
                                     text-decoration: none;
-                                    background: rgba(255, 255, 255, 0.1);
+                                    background: var(--bg-secondary);
                                     border-radius: 8px;
                                     transition: all 0.3s ease;
                                 """,
-                                onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'; this.style.transform='translateX(-4px)';",
-                                onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateX(0)';",
+                                onmouseover="this.style.background='var(--bg-tertiary)'; this.style.transform='translateX(-4px)';",
+                                onmouseout="this.style.background='var(--bg-secondary)'; this.style.transform='translateX(0)';",
                             ),
                             style='padding: 8rem 2rem 4rem;',
                         )
@@ -156,10 +65,14 @@ def collection_detail_page(collection_id: str, page: int = 1):
             ),
         )
 
-    # Fetch photos for this collection
-    photos, has_more = fetch_collection_photos(collection_id, page=page, per_page=30)
+    # Fetch photos for this collection with search support
+    photos, has_more = search_photos(
+        query=search_query, page=page, per_page=30, order_by='latest', collection_id=collection_id
+    )
 
-    gallery_items = [create_collection_gallery_item(photo, i) for i, photo in enumerate(photos)]
+    gallery_items = [
+        create_photo_item(photo, i, layout='gallery') for i, photo in enumerate(photos)
+    ]
 
     return Html(
         create_head(
@@ -180,7 +93,7 @@ def collection_detail_page(collection_id: str, page: int = 1):
                         'All Collections',
                         href='/collections',
                         style="""
-                            color: #888;
+                            color: var(--text-tertiary);
                             text-decoration: none;
                             font-size: 0.95rem;
                             display: inline-flex;
@@ -190,10 +103,10 @@ def collection_detail_page(collection_id: str, page: int = 1):
                             padding: 0.5rem 1rem;
                             border-radius: 8px;
                             transition: all 0.3s ease;
-                            background: rgba(255, 255, 255, 0.03);
+                            background: var(--bg-secondary);
                         """,
-                        onmouseover="this.style.color='#fff'; this.style.background='rgba(255, 255, 255, 0.08)'; this.style.transform='translateX(-4px)';",
-                        onmouseout="this.style.color='#888'; this.style.background='rgba(255, 255, 255, 0.03)'; this.style.transform='translateX(0)';",
+                        onmouseover="this.style.color='var(--text-primary)'; this.style.background='var(--bg-tertiary)'; this.style.transform='translateX(-4px)';",
+                        onmouseout="this.style.color='var(--text-tertiary)'; this.style.background='var(--bg-secondary)'; this.style.transform='translateX(0)';",
                     ),
                     H1(
                         collection['title'],
@@ -201,11 +114,11 @@ def collection_detail_page(collection_id: str, page: int = 1):
                     ),
                     P(
                         f'{collection["total_photos"]} photos',
-                        style='color: #888; font-size: 1.1rem; margin-bottom: 1rem;',
+                        style='color: var(--text-tertiary); font-size: 1.1rem; margin-bottom: 1rem;',
                     ),
                     P(
                         collection['description'],
-                        style='color: #aaa; font-size: 1rem; line-height: 1.6; max-width: 800px;',
+                        style='color: var(--text-secondary); font-size: 1rem; line-height: 1.6; max-width: 800px;',
                     )
                     if collection['description']
                     else None,
@@ -218,24 +131,28 @@ def collection_detail_page(collection_id: str, page: int = 1):
                 Section(
                     Div(
                         Div(*gallery_items, cls='gallery-grid', id='gallery-grid'),
-                        # Load more button (for infinite scroll)
+                        # Load more link (for pagination)
                         Div(
-                            Button(
-                                'Load More',
-                                id='load-more-btn',
+                            A(
+                                'Load More Photos →',
+                                href=f'/collection/{collection_id}?page={page + 1}'
+                                + (f'&q={search_query}' if search_query else ''),
                                 style="""
-                                    padding: 1rem 2rem;
-                                    background: rgba(255, 255, 255, 0.1);
-                                    border: none;
-                                    color: #fff;
-                                    border-radius: 6px;
-                                    cursor: pointer;
+                                    display: block;
+                                    margin: 3rem auto;
+                                    padding: 1rem 2.5rem;
+                                    background: rgba(255, 255, 255, 0.05);
+                                    border: 1px solid rgba(255, 255, 255, 0.15);
+                                    border-radius: 8px;
+                                    color: var(--text-primary);
+                                    text-decoration: none;
                                     font-size: 1rem;
-                                    transition: background 0.3s ease;
+                                    text-align: center;
+                                    transition: all 0.3s ease;
+                                    width: fit-content;
                                 """,
-                                onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'",
-                                onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'",
-                                **{'data-collection-id': collection_id, 'data-page': str(page + 1)},
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.25)'",
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.15)'",
                             )
                             if has_more
                             else None,
@@ -253,7 +170,5 @@ def collection_detail_page(collection_id: str, page: int = 1):
             ),
             create_footer(),
             create_lightbox(),
-            # Infinite scroll script
-            Script(src='/static/js/infinite-scroll.js', defer=True) if has_more else None,
         ),
     )

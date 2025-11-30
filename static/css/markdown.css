@@ -7,7 +7,7 @@
 .markdown-content h1 {
     font-size: 2.5rem;
     margin: 2.5rem 0 1.5rem 0;
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 200;
     letter-spacing: 0.05em;
 }
@@ -15,21 +15,21 @@
 .markdown-content h2 {
     font-size: 1.8rem;
     margin: 2rem 0 1rem 0;
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 300;
 }
 
 .markdown-content h3 {
     font-size: 1.5rem;
     margin: 1.5rem 0 1rem 0;
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 300;
 }
 
 .markdown-content h4 {
     font-size: 1.2rem;
     margin: 1.2rem 0 0.8rem 0;
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 400;
 }
 
@@ -41,25 +41,25 @@
 .markdown-content strong,
 .markdown-content b {
     font-weight: 500;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .markdown-content em,
 .markdown-content i {
     font-style: italic;
-    color: #ddd;
+    color: var(--text-secondary);
 }
 
 .markdown-content code {
     font-family: 'Courier New', monospace;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
     padding: 0.2em 0.4em;
     border-radius: 3px;
     font-size: 0.9em;
 }
 
 .markdown-content pre {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--card-bg);
     padding: 1rem;
     border-radius: 6px;
     overflow-x: auto;
@@ -88,15 +88,15 @@
 }
 
 .markdown-content blockquote {
-    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    border-left: 3px solid var(--border-primary);
     padding-left: 1.5rem;
     margin: 1.5rem 0;
-    color: #aaa;
+    color: var(--text-secondary);
     font-style: italic;
 }
 
 .markdown-content a {
-    color: #fff;
+    color: var(--text-primary);
     text-decoration: underline;
     margin-right: 1.5rem;
     transition: opacity 0.3s ease;
@@ -113,7 +113,7 @@
 
 .markdown-content hr {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-primary);
     margin: 2rem 0;
 }
 
@@ -127,12 +127,12 @@
 .markdown-content td {
     padding: 0.75rem;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .markdown-content th {
     font-weight: 500;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .markdown-content img {
