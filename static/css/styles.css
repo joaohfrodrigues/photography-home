@@ -51,6 +51,7 @@ textarea {
     z-index: 100;
     will-change: padding, background;
     transition:
+        min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -63,6 +64,7 @@ textarea {
 
 /* Compact header state when scrolled */
 .hero.compact {
+    min-height: auto;
     padding: 1rem 2rem;
     background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(10px);
@@ -71,6 +73,7 @@ textarea {
 }
 
 #hero.compact {
+    min-height: auto;
     padding: 1rem 2rem;
 }
 
@@ -123,15 +126,13 @@ nav a:hover {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    will-change: transform;
-    transform-origin: left center;
     transition:
-        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero.compact h1 {
-    transform: scale(0.35);
+    font-size: 1.5rem;
     margin-bottom: 0;
 }
 
