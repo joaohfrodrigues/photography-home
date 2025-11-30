@@ -1,0 +1,98 @@
+# Pre-commit hooks for photography portfolio project
+# Installation: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+    # Python code formatting and linting
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.7.4
+      hooks:
+          # Run the linter
+          - id: ruff
+            args: [--fix]
+            types_or: [python, pyi]
+          # Run the formatter
+          - id: ruff-format
+            types_or: [python, pyi]
+
+    # JavaScript/CSS formatting
+    - repo: https://github.com/pre-commit/mirrors-prettier
+      rev: v4.0.0-alpha.8
+      hooks:
+          - id: prettier
+            types_or: [javascript, css, json, markdown, yaml]
+            args: [--write, --tab-width=4, --print-width=100]
+
+    # General file checks
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          # Python-specific
+          - id: check-ast # Check Python syntax
+          - id: check-builtin-literals # Require literal syntax for initializing empty or zero Python builtin types
+          - id: debug-statements # Check for debugger imports and py37+ breakpoint() calls
+          - id: name-tests-test # Verify that test files are named correctly
+            args: [--pytest-test-first]
+
+          # General
+          - id: check-added-large-files # Prevent giant files from being committed (>500KB)
+            args: [--maxkb=500]
+          - id: check-case-conflict # Check for files that would conflict in case-insensitive filesystems
+          - id: check-merge-conflict # Check for files that contain merge conflict strings
+          - id: check-symlinks # Check for symlinks which do not point to anything
+          - id: check-toml # Check TOML file syntax
+          - id: check-yaml # Check YAML file syntax
+            args: [--unsafe] # Allow custom YAML tags
+          - id: check-json # Check JSON file syntax
+          - id: end-of-file-fixer # Ensure files end with a newline
+          - id: trailing-whitespace # Trim trailing whitespace
+            args: [--markdown-linebreak-ext=md]
+          - id: mixed-line-ending # Ensure consistent line endings
+            args: [--fix=lf]
+          - id: detect-private-key # Detect private keys
+          - id: fix-byte-order-marker # Remove UTF-8 byte order marker
+
+    # Security checks
+    - repo: https://github.com/Yelp/detect-secrets
+      rev: v1.5.0
+      hooks:
+          - id: detect-secrets
+            args: [--baseline, .secrets.baseline]
+            exclude: package.lock.json
+
+    # Markdown linting
+    - repo: https://github.com/igorshubovych/markdownlint-cli
+      rev: v0.42.0
+      hooks:
+          - id: markdownlint
+            args: [--fix]
+
+    # HTML validation
+    - repo: https://github.com/Lucas-C/pre-commit-hooks-markup
+      rev: v1.0.1
+      hooks:
+          - id: rst-linter
+            exclude: .*
+
+    # Check for common security issues in Python
+    - repo: https://github.com/PyCQA/bandit
+      rev: 1.7.10
+      hooks:
+          - id: bandit
+            args: [-c, pyproject.toml]
+            additional_dependencies: ['bandit[toml]']
+            exclude: ^tests/
+
+    # Check dependencies for known security vulnerabilities
+    # Note: Removed deprecated safety check. Run manually: safety scan
+    # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    #   rev: v1.3.3
+    #   hooks:
+    #     - id: python-safety-dependencies-check
+    #       files: requirements.txt
+
+# Configuration for specific tools
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+fail_fast: false
