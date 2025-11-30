@@ -2,7 +2,14 @@
 
 import pytest
 
-from backend.database import get_db_connection, init_database, insert_photo
+import backend.database as db_module
+from backend.database import (
+    get_db_connection,
+    init_database,
+    insert_collection,
+    insert_photo,
+    link_photo_to_collection,
+)
 from backend.db_service import (
     get_all_collections,
     get_collection_photos,
@@ -15,9 +22,6 @@ from backend.db_service import (
 @pytest.fixture
 def test_db_with_data(tmp_path):
     """Create a test database with sample data"""
-    import backend.database as db_module
-    from backend.database import insert_collection, link_photo_to_collection
-
     original_path = db_module.DB_PATH
     db_module.DB_PATH = tmp_path / 'test_photos.db'
 

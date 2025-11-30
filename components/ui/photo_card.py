@@ -2,6 +2,10 @@
 
 from fasthtml.common import *
 
+from components.ui.filters import create_filters
+from components.ui.search_bar import create_search_bar
+from config import EXIF_LAZY_LOADING
+
 
 def distribute_to_columns(photos, num_columns=3):
     """
@@ -49,8 +53,6 @@ def create_photo_item(photo, index=0, layout='gallery'):
     Returns:
         Div element with appropriate structure for the layout
     """
-    from config import EXIF_LAZY_LOADING
-
     # Calculate dimensions and orientation
     width = photo.get('width', 1)
     height = photo.get('height', 1)
@@ -285,8 +287,6 @@ def create_photo_container(
     # Build container based on layout
     if layout == 'gallery':
         # Gallery layout for collection pages
-        from .filters import create_filters
-
         return Div(
             H2(title, cls='section-title') if title else None,
             create_filters(photos) if show_filters else None,
@@ -296,8 +296,6 @@ def create_photo_container(
         )
     else:
         # Grid layout for homepage - use explicit columns
-        from components.ui.search_bar import create_search_bar
-
         # Distribute photos to 3 columns using height-aware algorithm
         columns = distribute_to_columns(photos, num_columns=3)
 

@@ -1,4 +1,6 @@
-"""All collections page component"""
+"""Collections page component"""
+
+from datetime import datetime
 
 from fasthtml.common import *
 
@@ -14,8 +16,6 @@ def create_collection_card(collection):
     published_date = ''
     if collection.get('published_at'):
         try:
-            from datetime import datetime
-
             date_obj = datetime.fromisoformat(collection['published_at'].replace('Z', '+00:00'))
             published_date = date_obj.strftime('%B %Y')
         except (ValueError, AttributeError):

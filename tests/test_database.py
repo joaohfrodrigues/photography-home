@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+import backend.database as db_module
 from backend.database import (
     get_db_connection,
     init_database,
@@ -15,8 +16,6 @@ from backend.database import (
 def test_db(tmp_path):
     """Create a temporary test database"""
     # Override DB_PATH for testing
-    import backend.database as db_module
-
     original_path = db_module.DB_PATH
     db_module.DB_PATH = tmp_path / 'test_photos.db'
 
