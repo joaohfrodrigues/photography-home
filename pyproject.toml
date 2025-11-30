@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "photography-home"
 version = "1.0.0"
@@ -19,6 +23,11 @@ dev = [
     "bandit[toml]>=1.7.0",
     "pytest>=7.4.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*", "components*", "routes*", "services*"]
+exclude = ["tests*", "data*", "static*", "content*", ".venv*", "*.egg-info"]
 
 [tool.ruff]
 # Exclude common directories
