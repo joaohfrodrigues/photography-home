@@ -97,3 +97,17 @@ skips = ["B101", "B601", "B608"]  # B608: SQL injection check - using whiteliste
 
 [tool.bandit.assert_used]
 skips = ["*_test.py", "test_*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# Exclude local tests that require API keys
+addopts = [
+    "-v",
+    "--tb=short",
+    "--ignore=tests/local_tests",
+]
+# Set PYTHONPATH to include project root
+pythonpath = "."

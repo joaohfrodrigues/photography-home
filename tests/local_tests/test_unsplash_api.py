@@ -41,10 +41,6 @@ def _test_user_photos(headers):
     photos = response.json()
     print(f'✓ Success! Got {len(photos)} photos')
 
-    with open('test_output_user_photos.json', 'w') as f:
-        json.dump(photos, f, indent=2)
-    print('✓ Saved to: test_output_user_photos.json')
-
     if photos:
         _print_photo_analysis(photos[0])
     return photos
@@ -64,10 +60,6 @@ def _test_single_photo(photo_id, headers):
 
     photo_detail = response.json()
     print(f'✓ Success! Got photo details for {photo_id}')
-
-    with open('test_output_single_photo.json', 'w') as f:
-        json.dump(photo_detail, f, indent=2)
-    print('✓ Saved to: test_output_single_photo.json')
 
     _print_photo_analysis(photo_detail, 'Single Photo Analysis')
 
@@ -89,10 +81,7 @@ def test_user_photos_endpoint():
         _test_single_photo(photos[0]['id'], headers)
 
     print('\n' + '=' * 80)
-    print('\n✓ Test complete! Check the JSON files for full API responses.')
-    print('\nFiles created:')
-    print('  - test_output_user_photos.json (list endpoint)')
-    print('  - test_output_single_photo.json (individual photo endpoint)')
+    print('\n✓ Test complete!')
 
 
 if __name__ == '__main__':

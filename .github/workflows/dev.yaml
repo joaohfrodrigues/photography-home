@@ -36,7 +36,7 @@ jobs:
               run: bandit -r . -c pyproject.toml
 
             - name: Run pytest
-              run: PYTHONPATH=. pytest tests/ -v --tb=short
+              run: pytest
 
             - name: Check database schema
               run: |
