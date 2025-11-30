@@ -45,14 +45,34 @@ textarea {
     justify-content: center;
     background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     text-align: center;
-    position: relative;
+    position: sticky;
+    top: 0;
     padding: 3rem 2rem;
+    z-index: 100;
+    transition:
+        min-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Full height hero for gallery page */
 #hero {
     min-height: 100vh;
     padding: 8rem 2rem 6rem;
+}
+
+/* Compact header state when scrolled */
+.hero.compact {
+    min-height: 0;
+    padding: 1rem 2rem;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#hero.compact {
+    min-height: 0;
+    padding: 1rem 2rem;
 }
 
 .hero::before {
@@ -70,6 +90,17 @@ textarea {
     animation: fadeInUp 1.2s ease-out;
     position: relative;
     z-index: 1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Compact hero content */
+.hero.compact .hero-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* Navigation */
@@ -93,6 +124,14 @@ nav a:hover {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    transition:
+        font-size 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero.compact h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0;
 }
 
 .hero p {
@@ -101,6 +140,17 @@ nav a:hover {
     letter-spacing: 0.2em;
     text-transform: uppercase;
     font-weight: 300;
+    transition:
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero.compact p {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
 }
 
 .scroll-indicator {
@@ -109,6 +159,12 @@ nav a:hover {
     left: 50%;
     transform: translateX(-50%);
     animation: bounce 2s infinite;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero.compact .scroll-indicator {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .scroll-indicator::after {

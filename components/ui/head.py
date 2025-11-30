@@ -69,5 +69,6 @@ def create_head(
         # Structured data
         Script(structured_data, type='application/ld+json'),
         # JavaScript (deferred)
+        Script(src='/static/js/sticky-header.js', defer=True),
         Script(src='/static/js/lightbox.js', defer=True),
     )
