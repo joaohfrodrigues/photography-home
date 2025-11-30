@@ -228,6 +228,7 @@ def fetch_user_collections():
         collections = response.json()
 
         # Transform to simplified structure
+        # Mark first 3 collections as featured (by most recent)
         collection_data = [
             {
                 'id': c['id'],
@@ -241,8 +242,9 @@ def fetch_user_collections():
                 },
                 'published_at': c.get('published_at', ''),
                 'updated_at': c.get('updated_at', ''),
+                'featured': i < 3,  # First 3 collections are featured
             }
-            for c in collections
+            for i, c in enumerate(collections)
         ]
 
         # Update cache
@@ -255,6 +257,77 @@ def fetch_user_collections():
     except Exception as e:
         logger.error(f'Error fetching collections: {e}', exc_info=True)
         return _collections_cache.get('data', [])
+
+
+def fetch_latest_user_photos(page: int = 1, per_page: int = 30):
+    """
+    Fetch latest photos from the user's account with pagination.
+    Results are cached per page for 15 minutes.
+
+    Args:
+        page: Page number (1-indexed)
+        per_page: Number of photos per page (max 30)
+
+    Returns:
+        Tuple of (photos list, has_more_pages boolean)
+    """
+    cache_key = f'latest_photos:page:{page}'
+
+    # Check cache (15 minutes for latest photos)
+    if cache_key in _collection_photos_cache:
+        cached_data = _collection_photos_cache[cache_key]
+        cache_age = time.time() - cached_data['timestamp']
+        if cache_age < (15 * 60):  # 15 minutes
+            logger.info(f'Using cached latest photos for page {page}')
+            return cached_data['photos'], cached_data['has_more']
+
+    if not UNSPLASH_ACCESS_KEY:
+        logger.warning('No Unsplash API key - cannot fetch latest photos')
+        return [], False
+
+    logger.info(f'Fetching latest user photos, page {page}')
+    headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
+
+    try:
+        response = requests.get(
+            f'https://api.unsplash.com/users/{UNSPLASH_USERNAME}/photos',
+            headers=headers,
+            params={'page': page, 'per_page': per_page, 'order_by': 'latest'},
+            timeout=10,
+        )
+
+        if response.status_code != 200:
+            logger.error(f'Latest photos API error: {response.status_code}')
+            return [], False
+
+        photos = response.json()
+        photo_data = _transform_photo_data(photos)
+
+        # Check for pagination using Link header
+        link_header = response.headers.get('Link', '')
+        has_more = 'rel="next"' in link_header
+
+        # Fallback check
+        if not link_header:
+            has_more = len(photos) == per_page
+
+        # Update cache
+        _collection_photos_cache[cache_key] = {
+            'photos': photo_data,
+            'has_more': has_more,
+            'timestamp': time.time(),
+        }
+        logger.info(f'Cached {len(photo_data)} latest photos for page {page}')
+
+        return photo_data, has_more
+
+    except Exception as e:
+        logger.error(f'Error fetching latest photos: {e}', exc_info=True)
+        # Return cached data if available
+        if cache_key in _collection_photos_cache:
+            cached = _collection_photos_cache[cache_key]
+            return cached['photos'], cached['has_more']
+        return [], False
 
 
 def fetch_collection_photos(collection_id: str, page: int = 1, per_page: int = 30):

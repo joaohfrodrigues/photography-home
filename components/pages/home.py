@@ -1,11 +1,12 @@
-"""Home page component - Collections preview"""
+"""Home page component - Hybrid layout with featured collections and latest photos"""
 
 from fasthtml.common import *
 
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_hero, create_navbar
-from services import fetch_collection_photos, fetch_user_collections
+from components.ui.photo_grid import create_photo_grid
+from services import fetch_collection_photos, fetch_latest_user_photos, fetch_user_collections
 
 
 def create_collection_card(collection, index):
@@ -169,37 +170,97 @@ def create_collection_card(collection, index):
     )
 
 
-def home_page(collections=None):
-    """Render the home page with collection grid"""
+def home_page(collections=None, latest_photos=None):
+    """Render the home page with featured collections and latest photos grid"""
     if collections is None:
         collections = fetch_user_collections()
+
+    # Filter for featured collections only (first 3-4)
+    featured_collections = [c for c in collections if c.get('featured', False)]
+
+    # Fetch latest photos if not provided
+    if latest_photos is None:
+        latest_photos, _ = fetch_latest_user_photos(page=1, per_page=24)
 
     return Html(
         create_head(),
         Body(
             create_navbar(current_page='home'),
             create_hero(),
-            # Collections grid section
+            # Main content
             Main(
+                # Featured Collections Section (30%)
                 Section(
                     Div(
-                        H2(
-                            'Collections',
-                            style='font-size: 2.5rem; margin-bottom: 2rem; text-align: center; font-weight: 200; letter-spacing: 0.05em;',
-                        ),
-                        # Collections grid
                         Div(
-                            *[create_collection_card(c, i) for i, c in enumerate(collections)],
-                            cls='collections-grid',
+                            H2(
+                                'Featured Collections',
+                                style='font-size: 2rem; margin-bottom: 0.5rem; font-weight: 200; letter-spacing: 0.05em;',
+                            ),
+                            P(
+                                'Curated photo series from my portfolio',
+                                style='color: rgba(255, 255, 255, 0.6); font-size: 1rem; margin-bottom: 3rem;',
+                            ),
+                            style='text-align: center;',
+                        ),
+                        # Featured collections grid
+                        Div(
+                            *[
+                                create_collection_card(c, i)
+                                for i, c in enumerate(featured_collections)
+                            ],
+                            cls='featured-collections-grid',
                             style="""
                                 display: grid;
-                                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
                                 gap: 2rem;
-                                margin-top: 3rem;
+                                margin-bottom: 2rem;
                             """,
                         ),
+                        # Link to all collections
+                        Div(
+                            A(
+                                'View All Collections →',
+                                href='/collections',
+                                style="""
+                                    display: inline-block;
+                                    padding: 0.875rem 2rem;
+                                    background: rgba(255, 255, 255, 0.05);
+                                    border: 1px solid rgba(255, 255, 255, 0.1);
+                                    border-radius: 8px;
+                                    color: #fff;
+                                    text-decoration: none;
+                                    font-size: 0.95rem;
+                                    transition: all 0.3s ease;
+                                """,
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.2)'",
+                                onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'",
+                            ),
+                            style='text-align: center; margin-top: 2rem;',
+                        ),
                         cls='container',
-                        style='max-width: 1600px; margin: 0 auto; padding: 4rem 2rem;',
+                        style='max-width: 1600px; margin: 0 auto; padding: 4rem 2rem 3rem;',
+                    ),
+                    style='background: rgba(255, 255, 255, 0.01);',
+                ),
+                # Latest Photos Section (70%)
+                Section(
+                    Div(
+                        Div(
+                            H2(
+                                'Latest Photos',
+                                style='font-size: 2rem; margin-bottom: 0.5rem; font-weight: 200; letter-spacing: 0.05em;',
+                            ),
+                            P(
+                                'Browse and search through my most recent photography',
+                                style='color: rgba(255, 255, 255, 0.6); font-size: 1rem; margin-bottom: 3rem;',
+                            ),
+                            style='text-align: center;',
+                        ),
+                        # Photo grid with search
+                        create_photo_grid(latest_photos, show_search=True),
+                        cls='container',
+                        style='max-width: 1800px; margin: 0 auto; padding: 4rem 2rem;',
                     ),
                 ),
             ),
@@ -334,6 +395,8 @@ def home_page(collections=None):
                     });
                 });
             """),
+            # Load search filter script
+            Script(src='/static/js/search-filter.js'),
             create_footer(),
         ),
     )
