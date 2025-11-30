@@ -97,3 +97,26 @@ if (!document.getElementById('filter-animations')) {
     `;
     document.head.appendChild(style);
 }
+
+/**
+ * Change photo ordering and reload page
+ */
+function changePhotoOrder() {
+    const orderSelect = document.getElementById('photo-order');
+    const selectedOrder = orderSelect?.value || 'popular';
+
+    // Reload page with order parameter
+    const url = new URL(window.location);
+    url.searchParams.set('order', selectedOrder);
+    window.location.href = url.toString();
+}
+
+// Set the order selector to match URL parameter on page load
+document.addEventListener('DOMContentLoaded', function () {
+    const orderSelect = document.getElementById('photo-order');
+    if (orderSelect) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderParam = urlParams.get('order') || 'popular';
+        orderSelect.value = orderParam;
+    }
+});

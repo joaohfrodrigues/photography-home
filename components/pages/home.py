@@ -5,6 +5,7 @@ from fasthtml.common import *
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_hero, create_navbar
+from components.ui.lightbox import create_lightbox
 from components.ui.photo_grid import create_photo_grid
 from services import fetch_collection_photos, fetch_latest_user_photos, fetch_user_collections
 
@@ -170,7 +171,7 @@ def create_collection_card(collection, index):
     )
 
 
-def home_page(collections=None, latest_photos=None):
+def home_page(collections=None, latest_photos=None, order='popular'):
     """Render the home page with featured collections and latest photos grid"""
     if collections is None:
         collections = fetch_user_collections()
@@ -180,7 +181,7 @@ def home_page(collections=None, latest_photos=None):
 
     # Fetch latest photos if not provided
     if latest_photos is None:
-        latest_photos, _ = fetch_latest_user_photos(page=1, per_page=24)
+        latest_photos, _ = fetch_latest_user_photos(page=1, per_page=24, order_by=order)
 
     return Html(
         create_head(),
@@ -397,6 +398,9 @@ def home_page(collections=None, latest_photos=None):
             """),
             # Load search filter script
             Script(src='/static/js/search-filter.js'),
+            # Load lightbox script
+            Script(src='/static/js/lightbox.js'),
             create_footer(),
+            create_lightbox(),
         ),
     )

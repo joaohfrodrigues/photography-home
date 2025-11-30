@@ -20,12 +20,12 @@ def register_page_routes(rt, app):
     """Register all page routes"""
 
     @rt('/')
-    def get():
-        """Homepage with collection previews"""
-        logger.info('Homepage accessed - fetching collection previews')
+    def get(order: str = 'popular'):
+        """Homepage with collection previews and latest photos"""
+        logger.info(f'Homepage accessed - fetching collection previews (order: {order})')
         collections = fetch_user_collections()
         logger.info(f'Rendering homepage with {len(collections)} collections')
-        return home_page(collections)
+        return home_page(collections, order=order)
 
     @rt('/collections')
     def get():

@@ -57,6 +57,8 @@ def _transform_photo_data(photos):
                 'description': photo.get('description', ''),
                 'alt_description': photo.get('alt_description', ''),
                 'likes': photo.get('likes', 0),
+                'views': photo.get('views', 0),
+                'downloads': photo.get('downloads', 0),
                 'width': photo.get('width', 1),
                 'height': photo.get('height', 1),
                 'created_at': photo.get('created_at', ''),
@@ -259,19 +261,20 @@ def fetch_user_collections():
         return _collections_cache.get('data', [])
 
 
-def fetch_latest_user_photos(page: int = 1, per_page: int = 30):
+def fetch_latest_user_photos(page: int = 1, per_page: int = 30, order_by: str = 'popular'):
     """
-    Fetch latest photos from the user's account with pagination.
+    Fetch photos from the user's account with pagination and ordering.
     Results are cached per page for 15 minutes.
 
     Args:
         page: Page number (1-indexed)
         per_page: Number of photos per page (max 30)
+        order_by: Order by 'latest', 'oldest', or 'popular' (default: 'popular')
 
     Returns:
         Tuple of (photos list, has_more_pages boolean)
     """
-    cache_key = f'latest_photos:page:{page}'
+    cache_key = f'photos:{order_by}:page:{page}'
 
     # Check cache (15 minutes for latest photos)
     if cache_key in _collection_photos_cache:
@@ -285,14 +288,14 @@ def fetch_latest_user_photos(page: int = 1, per_page: int = 30):
         logger.warning('No Unsplash API key - cannot fetch latest photos')
         return [], False
 
-    logger.info(f'Fetching latest user photos, page {page}')
+    logger.info(f'Fetching user photos (order: {order_by}), page {page}')
     headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
 
     try:
         response = requests.get(
             f'https://api.unsplash.com/users/{UNSPLASH_USERNAME}/photos',
             headers=headers,
-            params={'page': page, 'per_page': per_page, 'order_by': 'latest'},
+            params={'page': page, 'per_page': per_page, 'order_by': order_by, 'stats': 'true'},
             timeout=10,
         )
 
@@ -317,7 +320,7 @@ def fetch_latest_user_photos(page: int = 1, per_page: int = 30):
             'has_more': has_more,
             'timestamp': time.time(),
         }
-        logger.info(f'Cached {len(photo_data)} latest photos for page {page}')
+        logger.info(f'Cached {len(photo_data)} photos (order: {order_by}) for page {page}')
 
         return photo_data, has_more
 
