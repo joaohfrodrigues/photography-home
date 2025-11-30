@@ -49,11 +49,7 @@ textarea {
     top: 0;
     padding: 3rem 2rem;
     z-index: 100;
-    will-change: padding, background;
-    transition:
-        min-height 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-        padding 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-        background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s ease-in-out;
 }
 
 /* Full height hero for gallery page */
@@ -92,7 +88,6 @@ textarea {
     animation: fadeInUp 1.2s ease-out;
     position: relative;
     z-index: 1;
-    will-change: transform;
 }
 
 /* Compact hero content */
@@ -126,9 +121,7 @@ nav a:hover {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    transition:
-        font-size 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s ease-in-out;
 }
 
 .hero.compact h1 {
@@ -144,11 +137,7 @@ nav a:hover {
     font-weight: 300;
     max-height: 100px;
     overflow: hidden;
-    will-change: opacity, max-height;
-    transition:
-        opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-        max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-        margin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s ease-in-out;
 }
 
 .hero.compact p {
@@ -163,8 +152,7 @@ nav a:hover {
     left: 50%;
     transform: translateX(-50%);
     animation: bounce 2s infinite;
-    will-change: opacity;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.5s ease-in-out;
 }
 
 .hero.compact .scroll-indicator {

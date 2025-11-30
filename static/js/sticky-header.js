@@ -11,8 +11,8 @@ function updateHeaderState() {
 
     const scrollY = window.scrollY;
 
-    // Threshold: compact when scrolled more than 100px
-    const threshold = 100;
+    // Threshold: compact when scrolled more than 200px
+    const threshold = 200;
     const shouldBeCompact = scrollY > threshold;
 
     // Only update if state actually changed
