@@ -61,13 +61,6 @@ def create_head(
         Link(rel='apple-touch-icon', sizes='180x180', href='/static/favicons/apple-touch-icon.png'),
         # Preload critical resources
         Link(rel='preload', href='/static/css/styles.css', **{'as': 'style'}),
-        Link(
-            rel='preload',
-            href='/static/NotoSans-VariableFont_wdth,wght.ttf',
-            **{'as': 'font'},
-            type='font/ttf',
-            crossorigin='anonymous',
-        ),
         # DNS prefetch for external domains
         Link(rel='dns-prefetch', href='https://images.unsplash.com'),
         Link(rel='preconnect', href='https://images.unsplash.com', crossorigin='anonymous'),
