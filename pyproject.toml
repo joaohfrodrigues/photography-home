@@ -1,3 +1,24 @@
+[project]
+name = "photography-home"
+version = "1.0.0"
+description = "Photography portfolio website"
+authors = [{name = "João Rodrigues"}]
+requires-python = ">=3.10"
+dependencies = [
+    "python-fasthtml",
+    "uvicorn",
+    "requests",
+    "python-dotenv",
+    "markdown",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.5.0",
+    "ruff>=0.7.0",
+    "bandit[toml]>=1.7.0",
+]
+
 [tool.ruff]
 # Exclude common directories
 exclude = [
