@@ -171,6 +171,6 @@ def create_lightbox():
             ),
             cls='lightbox',
             id='lightbox',
-            onclick='event.target.id === "lightbox" && closeLightbox()',
+            onclick='event.target.id === "lightbox" && !this.hasAttribute("data-swiped") && closeLightbox()',
         )
     )

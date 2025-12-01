@@ -34,6 +34,7 @@
         // Pointer events (mouse, pen, touch) - modern and recommended
         function onPointerDown(e) {
             // Ignore interactions that start on interactive controls (buttons/links/dots)
+            let ignored = false;
             try {
                 if (
                     ignoreSelector &&
@@ -41,7 +42,7 @@
                     e.target.closest &&
                     e.target.closest(ignoreSelector)
                 ) {
-                    return;
+                    ignored = true;
                 }
             } catch (err) {
                 // ignore selector evaluation errors and continue
@@ -53,7 +54,7 @@
             tracking = true;
             startX = lastX = e.clientX;
             startY = lastY = e.clientY;
-            el.setPointerCapture?.(pointerId);
+            // el.setPointerCapture?.(pointerId);
         }
 
         function onPointerMove(e) {
@@ -66,11 +67,20 @@
             if (!tracking || e.pointerId !== pointerId) return;
             const dx = lastX - startX;
             const dy = lastY - startY;
+
+            // Check if it was a swipe (movement > threshold)
             if (Math.abs(dx) > threshold && Math.abs(dy) < verticalThreshold) {
                 if (dx > 0) onRight(e);
                 else onLeft(e);
+
+                // --- NEW CODE: PREVENT CLICK ---
+                // Add a temporary attribute to the element to signal a swipe occurred
+                el.setAttribute('data-swiped', 'true');
+                setTimeout(() => el.removeAttribute('data-swiped'), 100); // Clear it quickly
+                // -------------------------------
             }
-            el.releasePointerCapture?.(pointerId);
+
+            // el.releasePointerCapture?.(pointerId); // (You already commented this out)
             reset();
         }
 
@@ -78,6 +88,7 @@
         function onTouchStart(e) {
             if (!e.touches || e.touches.length !== 1) return;
             // Ignore if touch starts on an interactive control
+            let ignored = false;
             try {
                 if (
                     ignoreSelector &&
@@ -85,7 +96,7 @@
                     e.target.closest &&
                     e.target.closest(ignoreSelector)
                 ) {
-                    return;
+                    ignored = true;
                 }
             } catch (err) {
                 // ignore and continue
@@ -128,6 +139,7 @@
         }
 
         function detach() {
+            dbg('detach handler');
             if (window.PointerEvent) {
                 el.removeEventListener('pointerdown', onPointerDown);
                 el.removeEventListener('pointermove', onPointerMove);

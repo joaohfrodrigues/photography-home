@@ -1,5 +1,3 @@
-/* Lightbox: modal, image viewer, metadata panel */
-
 .lightbox {
     display: none;
     position: fixed;
@@ -12,6 +10,17 @@
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(10px);
+    /* 1. Essential for swipe to work on the container */
+    touch-action: none; /* Disable browser handling (scrolling) on the lightbox overlay */
+    /* 2. Ensure it captures clicks */
+    pointer-events: auto;
+}
+
+/* Ensure the image doesn't get "dragged" instead of swiped */
+.lightbox img {
+    pointer-events: none; /* Let the click pass through to the container (optional, or use user-drag: none) */
+    -webkit-user-drag: none;
+    user-select: none;
 }
 
 .lightbox.active {
