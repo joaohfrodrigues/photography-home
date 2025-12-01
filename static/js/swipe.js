@@ -147,9 +147,13 @@
 
     function attachSwipe(element, opts) {
         if (!element) return () => {};
+        // Automatically disable browser horizontal scrolling on this element
+        element.style.touchAction = 'pan-y';
         const h = createHandler(element, opts || {});
         h.attach();
         return function detach() {
+            // Optional: reset it back if you want
+            element.style.touchAction = '';
             h.detach();
         };
     }

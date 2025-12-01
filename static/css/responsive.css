@@ -53,13 +53,13 @@
     }
 
     .lightbox-prev {
-        left: 50%;
-        transform: translateX(-60px);
+        left: calc(50% - 60px);
+        right: auto;
     }
 
     .lightbox-next {
-        right: 50%;
-        transform: translateX(60px);
+        right: calc(50% - 60px);
+        left: auto;
     }
 
     .lightbox-close {
@@ -158,11 +158,13 @@
     }
 
     .lightbox-prev {
-        transform: translateX(-52px);
+        left: calc(50% - 52px);
+        right: auto;
     }
 
     .lightbox-next {
-        transform: translateX(52px);
+        right: calc(50% - 52px);
+        left: auto;
     }
 
     .lightbox-title {
