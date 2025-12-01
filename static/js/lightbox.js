@@ -253,6 +253,8 @@ function openLightbox(index) {
         lightboxSwipeDetach = attachSwipe(lightbox, {
             threshold: 50,
             verticalThreshold: 100,
+            // Ignore swipes that start on the lightbox controls to preserve click behavior
+            ignoreSelector: '.lightbox-nav, .lightbox-close, a, button',
             onSwipeLeft: () => navigateLightbox(1),
             onSwipeRight: () => navigateLightbox(-1),
         });

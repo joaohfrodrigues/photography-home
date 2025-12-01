@@ -95,9 +95,7 @@ def transform_photo(
 
     transformed = {
         'id': photo['id'],
-        'title': photo.get('title')
-        or photo.get('alt_description')
-        or f'Untitled Photo {photo["id"]}',
+        'title': photo.get('title') or photo.get('alt_description') or 'Untitled',
         'description': photo.get('description', ''),
         'alt_description': photo.get('alt_description', ''),
         'created_at': photo.get('created_at', ''),

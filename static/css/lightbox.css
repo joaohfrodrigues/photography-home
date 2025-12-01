@@ -68,17 +68,17 @@
 }
 
 .lightbox-details::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: color-mix(in srgb, var(--overlay-bg) 90%, transparent);
     border-radius: 3px;
 }
 
 .lightbox-details::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
     border-radius: 3px;
 }
 
 .lightbox-details::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: color-mix(in srgb, var(--text-primary) 20%, transparent);
 }
 
 .lightbox-title {
@@ -132,7 +132,7 @@
 }
 
 .lightbox-tag {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
     padding: 0.3rem 0.8rem;
     border-radius: 12px;
     font-size: 0.8rem;
@@ -163,8 +163,8 @@
     width: 48px;
     height: 48px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--card-bg);
+    color: var(--text-primary);
     cursor: pointer;
     border-radius: 50%;
     display: grid;
@@ -182,7 +182,7 @@
 }
 
 .lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--card-hover-bg);
     transform: rotate(90deg) scale(1.05);
 }
 
@@ -193,8 +193,8 @@
     width: 48px;
     height: 48px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--card-bg);
+    color: var(--text-primary);
     cursor: pointer;
     border-radius: 50%;
     display: grid;
@@ -212,7 +212,7 @@
 }
 
 .lightbox-nav:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--card-hover-bg);
     transform: translateY(-50%) scale(1.05);
 }
 

@@ -82,6 +82,22 @@
     transform: scale(0.95) translateY(0) !important;
 }
 
+/* Theme-aware back to top button using CSS variables from base.css */
+#back-to-top {
+    background: var(--card-bg);
+    border: var(--border-primary);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='light'] #back-to-top {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+#back-to-top:hover {
+    background: var(--card-hover-bg);
+}
+
 /* Collection card */
 .collection-card {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

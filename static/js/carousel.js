@@ -131,9 +131,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // Attach generic swipe handler (pointer + touch) from `static/js/swipe.js`.
         // This keeps swipe logic reusable (carousel, lightbox, etc.).
         if (typeof attachSwipe === 'function') {
+            // Ignore pointer/touch gestures that start on carousel controls
             attachSwipe(carousel, {
                 threshold: 50,
                 verticalThreshold: 100,
+                ignoreSelector: '.carousel-prev, .carousel-next, .carousel-dot, .carousel-dot *',
                 onSwipeLeft: () => {
                     nextImage();
                     stopCarousel();

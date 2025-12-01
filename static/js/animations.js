@@ -49,6 +49,7 @@ function initBackToTop() {
     backToTopBtn.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; display: block;"><polyline points="18 15 12 9 6 15"></polyline></svg>';
     backToTopBtn.setAttribute('aria-label', 'Back to top');
+    // Set base inline styles and allow theme updates via updateBackToTopTheme()
     backToTopBtn.style.cssText = `
         position: fixed;
         bottom: 30px;
@@ -56,22 +57,23 @@ function initBackToTop() {
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
         cursor: pointer;
         opacity: 0;
         transform: translateY(20px);
         transition: all 0.3s ease;
         z-index: 1000;
         pointer-events: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         display: grid;
         place-items: center;
         padding: 0;
     `;
+    // Base colors use CSS variables defined in `static/css/base.css`.
+    // Rely on CSS for theme-aware colors; set a few variable-backed inline styles
+    backToTopBtn.style.background = 'var(--card-bg)';
+    backToTopBtn.style.border = 'var(--border-primary)';
+    backToTopBtn.style.color = 'var(--text-primary)';
     document.body.appendChild(backToTopBtn);
 
     // Show/hide on scroll
@@ -101,12 +103,11 @@ function initBackToTop() {
 
     // Hover effects
     backToTopBtn.addEventListener('mouseenter', () => {
-        backToTopBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+        // Hover background handled in CSS via :hover rule; only adjust transform here
         backToTopBtn.style.transform = 'translateY(-5px)';
     });
 
     backToTopBtn.addEventListener('mouseleave', () => {
-        backToTopBtn.style.background = 'rgba(255, 255, 255, 0.1)';
         backToTopBtn.style.transform = 'translateY(0)';
     });
 }

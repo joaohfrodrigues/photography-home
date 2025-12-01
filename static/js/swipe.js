@@ -16,6 +16,7 @@
         const verticalThreshold = opts.verticalThreshold ?? 100;
         const onLeft = opts.onSwipeLeft ?? noop;
         const onRight = opts.onSwipeRight ?? noop;
+        const ignoreSelector = opts.ignoreSelector || null;
 
         let startX = 0;
         let startY = 0;
@@ -32,6 +33,20 @@
 
         // Pointer events (mouse, pen, touch) - modern and recommended
         function onPointerDown(e) {
+            // Ignore interactions that start on interactive controls (buttons/links/dots)
+            try {
+                if (
+                    ignoreSelector &&
+                    e.target &&
+                    e.target.closest &&
+                    e.target.closest(ignoreSelector)
+                ) {
+                    return;
+                }
+            } catch (err) {
+                // ignore selector evaluation errors and continue
+            }
+
             // Only track primary button/touch
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             pointerId = e.pointerId;
@@ -62,6 +77,20 @@
         // Fallback for older touch-only environments
         function onTouchStart(e) {
             if (!e.touches || e.touches.length !== 1) return;
+            // Ignore if touch starts on an interactive control
+            try {
+                if (
+                    ignoreSelector &&
+                    e.target &&
+                    e.target.closest &&
+                    e.target.closest(ignoreSelector)
+                ) {
+                    return;
+                }
+            } catch (err) {
+                // ignore and continue
+            }
+
             tracking = true;
             startX = lastX = e.touches[0].clientX;
             startY = lastY = e.touches[0].clientY;
