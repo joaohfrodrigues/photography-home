@@ -400,6 +400,8 @@ def home_page(
             Script(src='/static/js/carousel.js'),
             # AJAX search handler for in-place updates
             Script(src='/static/js/search-handler.js'),
+            # Infinite scroll for loading next pages without reload
+            Script(src='/static/js/infinite-scroll.js'),
             # Client-side search and API-based infinite scroll removed in favor of server-side pagination
             # Lightbox script already loaded in head.py
             create_footer(),

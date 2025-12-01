@@ -29,7 +29,10 @@ def _row_to_dict(row) -> dict[str, Any]:
         'url_raw': data['url_raw'],
         'url_regular': data['url_regular'],
         'url_thumb': data['url_small'],
-        'title': data['title'] or 'Untitled',
+        # Prefer explicit title; fall back to alt_description when title is empty
+        # because many photos have long `description` (history) while `alt_description`
+        # contains a short caption suitable for a title.
+        'title': data.get('title') or data.get('alt_description') or 'Untitled',
         'description': data['description'] or '',
         'alt_description': data['alt_description'] or '',
         'views': data['views'] or 0,

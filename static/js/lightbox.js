@@ -154,7 +154,10 @@ function initLightbox() {
 
     // Add click handlers
     allGalleryItems.forEach((item, index) => {
-        item.addEventListener('click', e => {
+        // Avoid binding the same handler multiple times when reinitializing
+        if (item.dataset.lightboxBound === 'true') return;
+
+        const handler = e => {
             // Don't open lightbox if clicking on attribution links
             if (e.target.tagName === 'A' || e.target.closest('a')) {
                 console.log('Click on link, not opening lightbox');
@@ -169,21 +172,28 @@ function initLightbox() {
             if (visibleIndex !== -1) {
                 openLightbox(visibleIndex);
             }
-        });
+        };
+
+        item.addEventListener('click', handler);
+        // Mark as bound so subsequent init calls won't rebind
+        item.dataset.lightboxBound = 'true';
     });
 
     // Initial filter application
     applyFilters();
 
-    // Keyboard navigation
-    document.addEventListener('keydown', e => {
-        const lightbox = document.getElementById('lightbox');
-        if (!lightbox.classList.contains('active')) return;
+    // Keyboard navigation (bind only once)
+    if (!window.__lightboxKeyBound) {
+        document.addEventListener('keydown', e => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox || !lightbox.classList.contains('active')) return;
 
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') navigateLightbox(-1);
-        if (e.key === 'ArrowRight') navigateLightbox(1);
-    });
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+        window.__lightboxKeyBound = true;
+    }
 }
 
 function triggerDownload(downloadLocation, photoId) {

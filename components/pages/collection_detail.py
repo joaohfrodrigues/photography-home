@@ -170,5 +170,8 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
             ),
             create_footer(),
             create_lightbox(),
+            # AJAX search handler (shared) and infinite scroll for this gallery
+            Script(src='/static/js/search-handler.js'),
+            Script(src='/static/js/infinite-scroll.js'),
         ),
     )

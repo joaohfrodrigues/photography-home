@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.initLightbox();
             }
 
+            // Reinitialize infinite scroll if available
+            if (window.initInfiniteScroll) {
+                window.initInfiniteScroll();
+            }
+
             console.log('Search completed');
         } catch (error) {
             console.error('Search failed:', error);
