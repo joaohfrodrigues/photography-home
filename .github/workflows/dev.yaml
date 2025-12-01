@@ -27,9 +27,7 @@ jobs:
             - name: Install pre-commit
               # Using the official pre-commit GitHub Action avoids
               # installing pre-commit manually and keeps CI consistent
-              uses: pre-commit/action@v4
-              with:
-                  extra_args: --all-files
+              uses: pre-commit/action@v3.0.1
 
             - name: Run pytest
               run: pytest
