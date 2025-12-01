@@ -13,67 +13,63 @@ def _row_to_dict(row) -> dict[str, Any]:
     """Convert SQLite Row to dictionary with proper data types"""
     data = dict(row)
 
-    # Parse JSON fields
-    if data.get('tags'):
-        try:
-            data['tags'] = json.loads(data['tags'])
-        except (json.JSONDecodeError, TypeError):
-            data['tags'] = []
-    else:
-        data['tags'] = []
+    # Parse JSON `tags` field into a Python list. If parsing fails, fall back
+    # to an empty list. ETL now guarantees the `tags` column stores JSON.
+    try:
+        tags = json.loads(data.get('tags') or '[]')
+    except (json.JSONDecodeError, TypeError):
+        tags = []
 
-    # Restructure for backward compatibility with existing components
-    result = {
+    # The ETL enforces a canonical photo schema, so we do a minimal mapping
+    # here: return a dictionary shaped for the frontend but avoid heavy
+    # defensive logic — if fields are missing that's an ETL bug and should
+    # be surfaced earlier.
+    return {
         'id': data['id'],
-        'url': data['url_regular'],
-        'url_raw': data['url_raw'],
-        'url_regular': data['url_regular'],
-        'url_thumb': data['url_small'],
-        # Prefer explicit title; fall back to alt_description when title is empty
-        # because many photos have long `description` (history) while `alt_description`
-        # contains a short caption suitable for a title.
-        'title': data.get('title') or data.get('alt_description') or 'Untitled',
-        'description': data['description'] or '',
-        'alt_description': data['alt_description'] or '',
-        'views': data['views'] or 0,
-        'downloads': data['downloads'] or 0,
-        'likes': data['likes'] or 0,
-        'width': data['width'] or 1,
-        'height': data['height'] or 1,
-        'created_at': data['created_at'] or '',
-        'updated_at': data['updated_at'] or '',
-        'color': data['color'] or '#000000',
-        'blur_hash': data['blur_hash'] or '',
+        'url': data.get('url_regular'),
+        'url_raw': data.get('url_raw'),
+        'url_regular': data.get('url_regular'),
+        'url_thumb': data.get('url_small'),
+        'title': data.get('title') or '',
+        'description': data.get('description') or '',
+        'alt_description': data.get('alt_description') or '',
+        'views': data.get('views') or 0,
+        'downloads': data.get('downloads') or 0,
+        'likes': data.get('likes') or 0,
+        'width': data.get('width') or 0,
+        'height': data.get('height') or 0,
+        'created_at': data.get('created_at') or '',
+        'updated_at': data.get('updated_at') or '',
+        'color': data.get('color') or '#000000',
+        'blur_hash': data.get('blur_hash') or '',
         'exif': {
-            'make': data['exif_make'],
-            'model': data['exif_model'],
-            'exposure_time': data['exif_exposure_time'],
-            'aperture': data['exif_aperture'],
-            'focal_length': data['exif_focal_length'],
-            'iso': data['exif_iso'],
+            'make': data.get('exif_make'),
+            'model': data.get('exif_model'),
+            'exposure_time': data.get('exif_exposure_time'),
+            'aperture': data.get('exif_aperture'),
+            'focal_length': data.get('exif_focal_length'),
+            'iso': data.get('exif_iso'),
         },
         'location': {
-            'name': data['location_name'],
-            'city': data['location_city'],
-            'country': data['location_country'],
+            'name': data.get('location_name'),
+            'city': data.get('location_city'),
+            'country': data.get('location_country'),
         },
-        'tags': data['tags'],
+        'tags': tags,
         'user': {
-            'name': data['photographer_name'] or 'Unknown',
-            'username': data['photographer_username'] or '',
-            'profile_url': data['photographer_url'] or '',
+            'name': data.get('photographer_name') or 'Unknown',
+            'username': data.get('photographer_username') or '',
+            'profile_url': data.get('photographer_url') or '',
         },
         'links': {
-            'html': data['unsplash_url'] or '',
-            'download_location': data['download_location'] or '',
+            'html': data.get('unsplash_url') or '',
+            'download_location': data.get('download_location') or '',
         },
         'statistics': {
-            'views': {'total': data['views'] or 0},
-            'downloads': {'total': data['downloads'] or 0},
+            'views': {'total': data.get('views') or 0},
+            'downloads': {'total': data.get('downloads') or 0},
         },
     }
-
-    return result
 
 
 def get_latest_photos(
@@ -226,63 +222,39 @@ def search_photos(
 
     # Determine order clause
     if order_by == 'latest':
-        order_clause = 'created_at DESC'
+        order_clause = 'p.created_at DESC'
     elif order_by == 'oldest':
-        order_clause = 'created_at ASC'
+        order_clause = 'p.created_at ASC'
     else:  # popular
-        order_clause = 'views DESC, created_at DESC'
+        order_clause = 'p.views DESC, p.created_at DESC'
+
+    # Start building the query
+    sql_query = 'SELECT p.* FROM photos p'
+    params = []
+    where_clauses = []
+
+    if query:
+        sql_query += ' JOIN photos_fts fts ON p.rowid = fts.rowid'
+        where_clauses.append('photos_fts MATCH ?')
+        params.append(query)
+
+    if collection_id:
+        # Ensure JOIN is added if not already present
+        if 'JOIN photo_collections' not in sql_query:
+            sql_query += ' JOIN photo_collections pc ON p.id = pc.photo_id'
+        where_clauses.append('pc.collection_id = ?')
+        params.append(collection_id)
+
+    if where_clauses:
+        sql_query += ' WHERE ' + ' AND '.join(where_clauses)
+
+    # The f-string is safe because order_clause is built from a whitelist
+    sql_query += f' ORDER BY {order_clause} LIMIT ? OFFSET ?'  # nosec B608
+    params.extend([per_page + 1, offset])
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-
-        if query:
-            # FTS5 search with ordering
-            if collection_id:
-                # Search within collection
-                cursor.execute(  # nosec B608 - order_clause is from whitelisted values
-                    f"""
-                    SELECT p.* FROM photos p
-                    JOIN photos_fts fts ON p.rowid = fts.rowid
-                    JOIN photo_collections pc ON p.id = pc.photo_id
-                    WHERE photos_fts MATCH ? AND pc.collection_id = ?
-                    ORDER BY {order_clause}
-                    LIMIT ? OFFSET ?
-                """,
-                    (query, collection_id, per_page + 1, offset),
-                )
-            else:
-                # Search all photos
-                cursor.execute(  # nosec B608 - order_clause is from whitelisted values
-                    f"""
-                    SELECT p.* FROM photos p
-                    JOIN photos_fts fts ON p.rowid = fts.rowid
-                    WHERE photos_fts MATCH ?
-                    ORDER BY {order_clause}
-                    LIMIT ? OFFSET ?
-                """,
-                    (query, per_page + 1, offset),
-                )
-        # No search, just list with ordering
-        elif collection_id:
-            cursor.execute(  # nosec B608 - order_clause is from whitelisted values
-                f"""
-                    SELECT p.* FROM photos p
-                    JOIN photo_collections pc ON p.id = pc.photo_id
-                    WHERE pc.collection_id = ?
-                    ORDER BY {order_clause}
-                    LIMIT ? OFFSET ?
-                """,
-                (collection_id, per_page + 1, offset),
-            )
-        else:
-            cursor.execute(  # nosec B608 - order_clause is from whitelisted values
-                f"""
-                    SELECT * FROM photos
-                    ORDER BY {order_clause}
-                    LIMIT ? OFFSET ?
-                """,
-                (per_page + 1, offset),
-            )
+        cursor.execute(sql_query, tuple(params))
 
         rows = cursor.fetchall()
         has_more = len(rows) > per_page

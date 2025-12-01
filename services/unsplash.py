@@ -1,413 +1,248 @@
-"""Unsplash API integration and caching"""
+"""Unsplash API integration and caching.
+
+Provides an `UnsplashClient` class that encapsulates Unsplash API calls,
+in-memory caching, and error handling. Module-level wrapper functions call a
+default client for backward compatibility.
+"""
 
 import logging
-import time
 
 import requests
 
-from config import CACHE_DURATION_MINUTES, EXIF_LAZY_LOADING, UNSPLASH_ACCESS_KEY, UNSPLASH_USERNAME
-
 logger = logging.getLogger(__name__)
 
-# Cache storage
-_photo_cache = {'data': None, 'timestamp': None}
 
+class UnsplashClient:
+    """Client that encapsulates Unsplash API calls and simple in-memory caching.
 
-def is_cache_valid():
-    """Check if the cached data is still valid"""
-    if _photo_cache['data'] is None or _photo_cache['timestamp'] is None:
-        return False
-
-    cache_age = time.time() - _photo_cache['timestamp']
-    cache_valid = cache_age < (CACHE_DURATION_MINUTES * 60)
-
-    if cache_valid:
-        logger.debug(f'Cache hit - age: {cache_age:.1f}s / {CACHE_DURATION_MINUTES * 60}s')
-    else:
-        logger.debug(f'Cache expired - age: {cache_age:.1f}s')
-
-    return cache_valid
-
-
-def _get_fallback_photos():
-    """Return placeholder images when no API key is configured"""
-    logger.warning('No Unsplash API key configured. Using placeholder images.')
-    return [
-        {
-            'url': f'https://picsum.photos/800/600?random={i}',
-            'title': f'Sample {i + 1}',
-            'description': '',
-        }
-        for i in range(6)
-    ]
-
-
-def _transform_photo_data(photos):
-    """Transform raw Unsplash API response into our photo data structure"""
-    photo_data = []
-    for i, photo in enumerate(photos):
-        # Extract stats from statistics object if available
-        statistics = photo.get('statistics', {})
-        views = statistics.get('views', {}).get('total', 0) if statistics else 0
-        downloads = statistics.get('downloads', {}).get('total', 0) if statistics else 0
-
-        photo_data.append(
-            {
-                'id': photo['id'],
-                'url': photo['urls']['full'],
-                'url_raw': photo['urls']['raw'],
-                'url_regular': photo['urls']['regular'],
-                'url_thumb': photo['urls']['small'],
-                'title': photo.get('description')
-                or photo.get('alt_description')
-                or f'Photo {i + 1}',
-                'description': photo.get('description', ''),
-                'alt_description': photo.get('alt_description', ''),
-                'views': views,
-                'downloads': downloads,
-                'width': photo.get('width', 1),
-                'height': photo.get('height', 1),
-                'created_at': photo.get('created_at', ''),
-                'updated_at': photo.get('updated_at', ''),
-                'color': photo.get('color', '#000000'),
-                'blur_hash': photo.get('blur_hash', ''),
-                'exif': {
-                    'make': photo.get('exif', {}).get('make', 'Unknown'),
-                    'model': photo.get('exif', {}).get('model', 'Unknown'),
-                    'exposure_time': photo.get('exif', {}).get('exposure_time', 'N/A'),
-                    'aperture': photo.get('exif', {}).get('aperture', 'N/A'),
-                    'focal_length': photo.get('exif', {}).get('focal_length', 'N/A'),
-                    'iso': photo.get('exif', {}).get('iso', 'N/A'),
-                },
-                'location': {
-                    'name': photo.get('location', {}).get('name')
-                    if photo.get('location')
-                    else None,
-                    'city': photo.get('location', {}).get('city')
-                    if photo.get('location')
-                    else None,
-                    'country': photo.get('location', {}).get('country')
-                    if photo.get('location')
-                    else None,
-                },
-                'tags': [tag.get('title', '') for tag in photo.get('tags', [])],
-                'user': {
-                    'name': photo.get('user', {}).get('name', 'Unknown'),
-                    'username': photo.get('user', {}).get('username', ''),
-                    'portfolio_url': photo.get('user', {}).get('portfolio_url', ''),
-                    'profile_url': f'https://unsplash.com/@{photo.get("user", {}).get("username", "")}'
-                    if photo.get('user', {}).get('username')
-                    else '',
-                },
-                'links': {
-                    'html': photo.get('links', {}).get('html', ''),
-                    'download': photo.get('links', {}).get('download', ''),
-                    'download_location': photo.get('links', {}).get('download_location', ''),
-                },
-            }
-        )
-    return photo_data
-
-
-def _log_exif_info(photos):
-    """Log EXIF data availability information"""
-    if EXIF_LAZY_LOADING:
-        logger.info(
-            'EXIF lazy loading enabled - EXIF will be fetched on-demand when viewing photos'
-        )
-    else:
-        logger.info('EXIF lazy loading disabled - no EXIF data will be loaded')
-
-    exif_count = sum(1 for photo in photos if photo.get('exif'))
-    logger.info(f'Photos with EXIF data in initial response: {exif_count}/{len(photos)}')
-
-    if photos and photos[0].get('exif'):
-        logger.debug(f'Sample EXIF data: {photos[0].get("exif")}')
-    else:
-        logger.warning('First photo has no EXIF data - checking raw response')
-        if photos:
-            logger.debug(f'First photo keys: {list(photos[0].keys())}')
-
-
-def _fetch_from_api():
-    """Fetch photos from Unsplash API"""
-    logger.info(f'Fetching photos for Unsplash user: {UNSPLASH_USERNAME}')
-    headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
-
-    response = requests.get(
-        f'https://api.unsplash.com/users/{UNSPLASH_USERNAME}/photos',
-        headers=headers,
-        params={'per_page': 30, 'order_by': 'latest', 'stats': 'true'},
-        timeout=10,
-    )
-
-    if response.status_code != 200:
-        logger.error(f'Unsplash API error: {response.status_code} - {response.text}')
-        return None
-
-    photos = response.json()
-    logger.info(f'Successfully fetched {len(photos)} photos from Unsplash')
-    _log_exif_info(photos)
-    return _transform_photo_data(photos)
-
-
-def _update_cache(photo_data):
-    """Update the photo cache with new data"""
-    _photo_cache['data'] = photo_data
-    _photo_cache['timestamp'] = time.time()
-    logger.info(f'Cached {len(photo_data)} photos for {CACHE_DURATION_MINUTES} minutes')
-
-
-def _get_cached_or_empty():
-    """Return cached data if available, otherwise empty list"""
-    if _photo_cache['data']:
-        logger.warning('Returning stale cache due to error')
-        return _photo_cache['data']
-    return []
-
-
-def fetch_unsplash_photos():
-    """Fetch photos from your Unsplash account with caching"""
-    # Check cache first
-    if is_cache_valid():
-        logger.info('Using cached Unsplash photos')
-        return _photo_cache['data']
-
-    logger.info('Cache miss - fetching fresh data from Unsplash')
-
-    # Return placeholder if no API key
-    if not UNSPLASH_ACCESS_KEY:
-        return _get_fallback_photos()
-
-    # Fetch from API with comprehensive error handling
-    try:
-        photo_data = _fetch_from_api()
-        if photo_data is not None:
-            _update_cache(photo_data)
-            return photo_data
-    except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
-        error_type = 'timed out' if isinstance(e, requests.exceptions.Timeout) else 'failed'
-        logger.error(f'Unsplash API request {error_type}: {e}')
-    except Exception as e:
-        logger.error(f'Unexpected error fetching Unsplash photos: {e}', exc_info=True)
-
-    # If we get here, something went wrong - return cached data or empty list
-    return _get_cached_or_empty()
-
-
-# Collections cache storage
-_collections_cache = {'data': None, 'timestamp': None}
-_collection_photos_cache = {}  # Key: f"{collection_id}:page:{page_num}"
-
-
-def fetch_user_collections():
+    Args:
+        access_key: Unsplash API access key (Client ID). If falsy, API calls are
+            skipped and fallback data is returned where applicable.
+        username: Unsplash username to fetch user-specific endpoints.
     """
-    Fetch all collections for the configured Unsplash user.
-    Results are cached for 24 hours.
 
-    Returns:
-        List of collection dictionaries with id, title, description, photo count, cover photo
-    """
-    # Check cache (7 day cache for collections - they rarely change)
-    if _collections_cache['data'] and _collections_cache['timestamp']:
-        cache_age = time.time() - _collections_cache['timestamp']
-        if cache_age < (7 * 24 * 60 * 60):  # 7 days
-            logger.info('Using cached collections')
-            return _collections_cache['data']
+    def __init__(self, access_key: str = None, username: str = None):
+        self.access_key = access_key
+        self.username = username
+        self.base_url = 'https://api.unsplash.com'
+        self.headers = {'Authorization': f'Client-ID {self.access_key}'} if self.access_key else {}
 
-    if not UNSPLASH_ACCESS_KEY:
-        logger.warning('No Unsplash API key - cannot fetch collections')
-        return []
+        # This client is intentionally stateless for simplicity. The ETL runs
+        # once per day and downstream systems should be responsible for any
+        # caching or rate-limiting concerns. Keeping the client stateless
+        # avoids cross-run state and keeps provider implementations simple.
 
-    logger.info(f'Fetching collections for user: {UNSPLASH_USERNAME}')
-    headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
-
-    try:
-        response = requests.get(
-            f'https://api.unsplash.com/users/{UNSPLASH_USERNAME}/collections',
-            headers=headers,
-            timeout=10,
-        )
-
-        if response.status_code != 200:
-            logger.error(f'Collections API error: {response.status_code}')
-            return _collections_cache.get('data', [])
-
-        collections = response.json()
-
-        # Transform to simplified structure
-        # Mark first 2 collections as featured (reduces API calls on homepage)
-        collection_data = [
+    def _get_fallback_photos(self) -> list[dict]:
+        logger.warning('No Unsplash API key configured. Using placeholder images.')
+        return [
             {
-                'id': c['id'],
-                'title': c['title'],
-                'description': c.get('description', ''),
-                'total_photos': c.get('total_photos', 0),
-                'cover_photo': {
-                    'url': c.get('cover_photo', {}).get('urls', {}).get('regular', ''),
-                    'url_raw': c.get('cover_photo', {}).get('urls', {}).get('raw', ''),
-                    'url_small': c.get('cover_photo', {}).get('urls', {}).get('small', ''),
-                    'color': c.get('cover_photo', {}).get('color', '#ccc'),
-                },
-                'published_at': c.get('published_at', ''),
-                'updated_at': c.get('updated_at', ''),
-                'featured': i < 2,  # First 2 collections are featured
+                'url': f'https://picsum.photos/800/600?random={i}',
+                'title': f'Sample {i + 1}',
+                'description': '',
             }
-            for i, c in enumerate(collections)
+            for i in range(6)
         ]
 
-        # Update cache
-        _collections_cache['data'] = collection_data
-        _collections_cache['timestamp'] = time.time()
-        logger.info(f'Cached {len(collection_data)} collections')
+    def _transform_photo_data(self, photos: list[dict]) -> list[dict]:
+        photo_data = []
+        for photo in photos:
+            statistics = photo.get('statistics', {})
+            views = statistics.get('views', {}).get('total', 0) if statistics else 0
+            downloads = statistics.get('downloads', {}).get('total', 0) if statistics else 0
 
-        return collection_data
+            photo_data.append(
+                {
+                    'id': photo['id'],
+                    'url': photo.get('urls', {}).get('full', ''),
+                    'url_full': photo.get('urls', {}).get('full', ''),
+                    'url_raw': photo.get('urls', {}).get('raw', ''),
+                    'url_regular': photo.get('urls', {}).get('regular', ''),
+                    'url_small': photo.get('urls', {}).get('small', ''),
+                    'url_thumb': photo.get('urls', {}).get('thumb', ''),
+                    'title': photo.get('alt_description') or f"Photo {photo['id']}",
+                    'description': photo.get('description', ''),
+                    'alt_description': photo.get('alt_description', ''),
+                    'views': views,
+                    'downloads': downloads,
+                    'width': photo.get('width', 1),
+                    'height': photo.get('height', 1),
+                    'created_at': photo.get('created_at', ''),
+                    'updated_at': photo.get('updated_at', ''),
+                    'color': photo.get('color', '#000000'),
+                    'blur_hash': photo.get('blur_hash', ''),
+                    'exif': {
+                        'make': photo.get('exif', {}).get('make', 'Unknown'),
+                        'model': photo.get('exif', {}).get('model', 'Unknown'),
+                        'exposure_time': photo.get('exif', {}).get('exposure_time', 'N/A'),
+                        'aperture': photo.get('exif', {}).get('aperture', 'N/A'),
+                        'focal_length': photo.get('exif', {}).get('focal_length', 'N/A'),
+                        'iso': photo.get('exif', {}).get('iso', 'N/A'),
+                    },
+                    'location': {
+                        'name': photo.get('location', {}).get('name')
+                        if photo.get('location')
+                        else None,
+                        'city': photo.get('location', {}).get('city')
+                        if photo.get('location')
+                        else None,
+                        'country': photo.get('location', {}).get('country')
+                        if photo.get('location')
+                        else None,
+                    },
+                    'tags': [tag.get('title', '') for tag in photo.get('tags', [])],
+                    'user': {
+                        'name': photo.get('user', {}).get('name', 'Unknown'),
+                        'username': photo.get('user', {}).get('username', ''),
+                        'portfolio_url': photo.get('user', {}).get('portfolio_url', ''),
+                        'profile_url': (
+                            f"https://unsplash.com/@{photo.get('user', {}).get('username', '')}"
+                            if photo.get('user', {}).get('username')
+                            else ''
+                        ),
+                    },
+                    'links': {
+                        'html': photo.get('links', {}).get('html', ''),
+                        'download': photo.get('links', {}).get('download', ''),
+                        'download_location': photo.get('links', {}).get('download_location', ''),
+                    },
+                }
+            )
+        return photo_data
 
-    except Exception as e:
-        logger.error(f'Error fetching collections: {e}', exc_info=True)
-        return _collections_cache.get('data', [])
+    # ----- Public methods -----
+    def fetch_photos(self) -> list[dict]:
+        """Fetch photos from the configured user's account (stateless).
 
+        Returns a transformed list of photos. If no access key is configured,
+        returns fallback placeholder images.
+        """
+        if not self.access_key or not self.username:
+            return self._get_fallback_photos()
 
-def fetch_latest_user_photos(page: int = 1, per_page: int = 30, order_by: str = 'popular'):
-    """
-    Fetch photos from the user's account with pagination and ordering.
-    Results are cached per page for 15 minutes.
+        try:
+            logger.info(f'Fetching photos for Unsplash user: {self.username}')
+            response = requests.get(
+                f'{self.base_url}/users/{self.username}/photos',
+                headers=self.headers,
+                params={'per_page': 30, 'order_by': 'latest', 'stats': 'true'},
+                timeout=10,
+            )
+            response.raise_for_status()
+            photos = response.json()
+            logger.info(f'Successfully fetched {len(photos)} photos from Unsplash')
+            return self._transform_photo_data(photos)
+        except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+            error_type = 'timed out' if isinstance(e, requests.exceptions.Timeout) else 'failed'
+            logger.error(f'Unsplash API request {error_type}: {e}')
+        except Exception as e:
+            logger.error(f'Unexpected error fetching Unsplash photos: {e}', exc_info=True)
+        return []
 
-    Args:
-        page: Page number (1-indexed)
-        per_page: Number of photos per page (max 30)
-        order_by: Order by 'latest', 'oldest', or 'popular' (default: 'popular')
+    def fetch_user_collections(self) -> list[dict]:
+        """Fetch all collections for the configured user (stateless)."""
+        if not self.access_key or not self.username:
+            logger.warning('No Unsplash API key - cannot fetch collections')
+            return []
 
-    Returns:
-        Tuple of (photos list, has_more_pages boolean)
-    """
-    cache_key = f'photos:{order_by}:page:{page}'
+        logger.info(f'Fetching collections for user: {self.username}')
+        try:
+            response = requests.get(
+                f'{self.base_url}/users/{self.username}/collections',
+                headers=self.headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            collections = response.json()
+            collection_data = [
+                {
+                    'id': c['id'],
+                    'title': c['title'],
+                    'description': c.get('description', ''),
+                    'total_photos': c.get('total_photos', 0),
+                    'cover_photo': {
+                        'url': c.get('cover_photo', {}).get('urls', {}).get('regular', ''),
+                        'url_raw': c.get('cover_photo', {}).get('urls', {}).get('raw', ''),
+                        'url_small': c.get('cover_photo', {}).get('urls', {}).get('small', ''),
+                        'color': c.get('cover_photo', {}).get('color', '#ccc'),
+                    },
+                    'published_at': c.get('published_at', ''),
+                    'updated_at': c.get('updated_at', ''),
+                    'featured': i < 2,
+                }
+                for i, c in enumerate(collections)
+            ]
+            return collection_data
+        except Exception as e:
+            logger.error(f'Error fetching collections: {e}', exc_info=True)
+            return []
 
-    # Check cache (30 minutes for latest photos)
-    if cache_key in _collection_photos_cache:
-        cached_data = _collection_photos_cache[cache_key]
-        cache_age = time.time() - cached_data['timestamp']
-        if cache_age < (30 * 60):  # 30 minutes
-            logger.info(f'Using cached latest photos for page {page}')
-            return cached_data['photos'], cached_data['has_more']
-
-    if not UNSPLASH_ACCESS_KEY:
-        logger.warning('No Unsplash API key - cannot fetch latest photos')
-        return [], False
-
-    logger.info(f'Fetching user photos (order: {order_by}), page {page}')
-    headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
-
-    try:
-        response = requests.get(
-            f'https://api.unsplash.com/users/{UNSPLASH_USERNAME}/photos',
-            headers=headers,
-            params={'page': page, 'per_page': per_page, 'order_by': order_by, 'stats': 'true'},
-            timeout=10,
-        )
-
-        if response.status_code != 200:
-            logger.error(f'Latest photos API error: {response.status_code}')
+    def fetch_latest_user_photos(
+        self, page: int = 1, per_page: int = 30, order_by: str = 'popular'
+    ) -> tuple[list[dict], bool]:
+        """Fetch a single page of user photos and return (photos, has_more)."""
+        if not self.access_key or not self.username:
+            logger.warning('No Unsplash API key - cannot fetch latest photos')
             return [], False
 
-        photos = response.json()
-        photo_data = _transform_photo_data(photos)
-
-        # Check for pagination using Link header
-        link_header = response.headers.get('Link', '')
-        has_more = 'rel="next"' in link_header
-
-        # Fallback check
-        if not link_header:
-            has_more = len(photos) == per_page
-
-        # Update cache
-        _collection_photos_cache[cache_key] = {
-            'photos': photo_data,
-            'has_more': has_more,
-            'timestamp': time.time(),
-        }
-        logger.info(f'Cached {len(photo_data)} photos (order: {order_by}) for page {page}')
-
-        return photo_data, has_more
-
-    except Exception as e:
-        logger.error(f'Error fetching latest photos: {e}', exc_info=True)
-        # Return cached data if available
-        if cache_key in _collection_photos_cache:
-            cached = _collection_photos_cache[cache_key]
-            return cached['photos'], cached['has_more']
-        return [], False
-
-
-def fetch_collection_photos(collection_id: str, page: int = 1, per_page: int = 30):
-    """
-    Fetch photos from a specific collection with pagination.
-    Results are cached per page for 1 hour.
-
-    Args:
-        collection_id: The Unsplash collection ID
-        page: Page number (1-indexed)
-        per_page: Number of photos per page (max 30)
-
-    Returns:
-        Tuple of (photos list, has_more_pages boolean)
-    """
-    cache_key = f'{collection_id}:page:{page}'
-
-    # Check cache (24 hour cache for collection photos)
-    if cache_key in _collection_photos_cache:
-        cached_data = _collection_photos_cache[cache_key]
-        cache_age = time.time() - cached_data['timestamp']
-        if cache_age < (24 * 60 * 60):  # 24 hours
-            logger.info(f'Using cached photos for {cache_key}')
-            return cached_data['photos'], cached_data['has_more']
-
-    if not UNSPLASH_ACCESS_KEY:
-        logger.warning('No Unsplash API key - cannot fetch collection photos')
-        return [], False
-
-    logger.info(f'Fetching collection {collection_id}, page {page}')
-    headers = {'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'}
-
-    try:
-        response = requests.get(
-            f'https://api.unsplash.com/collections/{collection_id}/photos',
-            headers=headers,
-            params={'page': page, 'per_page': per_page, 'order_by': 'latest'},
-            timeout=10,
-        )
-
-        if response.status_code != 200:
-            logger.error(f'Collection photos API error: {response.status_code}')
+        logger.info(f'Fetching user photos (order: {order_by}), page {page}')
+        try:
+            response = requests.get(
+                f'{self.base_url}/users/{self.username}/photos',
+                headers=self.headers,
+                params={'page': page, 'per_page': per_page, 'order_by': order_by, 'stats': 'true'},
+                timeout=10,
+            )
+            response.raise_for_status()
+            photos = response.json()
+            photo_data = self._transform_photo_data(photos)
+            link_header = response.headers.get('Link', '')
+            has_more = 'rel="next"' in link_header
+            if not link_header:
+                has_more = len(photos) == per_page
+            return photo_data, has_more
+        except Exception as e:
+            logger.error(f'Error fetching latest photos: {e}', exc_info=True)
             return [], False
 
-        photos = response.json()
-        photo_data = _transform_photo_data(photos)
+    def fetch_collection_photos(
+        self, collection_id: str, page: int = 1, per_page: int = 30
+    ) -> tuple[list[dict], bool]:
+        """Fetch a single page of photos from a collection and return (photos, has_more)."""
+        if not self.access_key:
+            logger.warning('No Unsplash API key - cannot fetch collection photos')
+            return [], False
 
-        # Check for pagination using Link header (more reliable than counting photos)
-        # Unsplash provides 'Link' header with rel="next" if there are more pages
-        link_header = response.headers.get('Link', '')
-        has_more = 'rel="next"' in link_header
+        logger.info(f'Fetching collection {collection_id}, page {page}')
+        try:
+            response = requests.get(
+                f'{self.base_url}/collections/{collection_id}/photos',
+                headers=self.headers,
+                params={'page': page, 'per_page': per_page, 'order_by': 'latest'},
+                timeout=10,
+            )
+            response.raise_for_status()
+            photos = response.json()
+            photo_data = self._transform_photo_data(photos)
+            link_header = response.headers.get('Link', '')
+            has_more = 'rel="next"' in link_header
+            if not link_header:
+                has_more = len(photos) == per_page
+            return photo_data, has_more
+        except Exception as e:
+            logger.error(f'Error fetching collection photos: {e}', exc_info=True)
+            return [], False
 
-        # Fallback: if no Link header, check if we got a full page
-        if not link_header:
-            has_more = len(photos) == per_page
+    def fetch_photo_details(self, photo_id: str) -> dict:
+        if not self.access_key:
+            logger.warning('No Unsplash API key - cannot fetch photo details')
+            return {}
 
-        # Update cache
-        _collection_photos_cache[cache_key] = {
-            'photos': photo_data,
-            'has_more': has_more,
-            'timestamp': time.time(),
-        }
-        logger.info(f'Cached {len(photo_data)} photos for {cache_key}')
-
-        return photo_data, has_more
-
-    except Exception as e:
-        logger.error(f'Error fetching collection photos: {e}', exc_info=True)
-        # Return cached data if available
-        if cache_key in _collection_photos_cache:
-            cached = _collection_photos_cache[cache_key]
-            return cached['photos'], cached['has_more']
-        return [], False
+        logger.info(f'Fetching details for photo {photo_id} from Unsplash API')
+        url = f'{self.base_url}/photos/{photo_id}'
+        try:
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f'Error fetching photo details: {e}', exc_info=True)
+            return {}

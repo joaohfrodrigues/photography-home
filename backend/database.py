@@ -170,13 +170,23 @@ def init_database():
 def insert_collection(conn: sqlite3.Connection, collection_data: dict[str, Any]) -> None:
     """Insert or update a collection in the database"""
     cursor = conn.cursor()
-
+    # Use an UPSERT that updates existing rows in-place to avoid DELETE/INSERT
+    # behavior which can trigger ON DELETE CASCADE or change rowid values.
     cursor.execute(
         """
-        INSERT OR REPLACE INTO collections (
+        INSERT INTO collections (
             id, title, description, total_photos, published_at, updated_at,
             cover_photo_id, cover_photo_url, last_synced_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            title=COALESCE(excluded.title, collections.title),
+            description=COALESCE(excluded.description, collections.description),
+            total_photos=COALESCE(excluded.total_photos, collections.total_photos),
+            published_at=COALESCE(excluded.published_at, collections.published_at),
+            updated_at=COALESCE(excluded.updated_at, collections.updated_at),
+            cover_photo_id=COALESCE(excluded.cover_photo_id, collections.cover_photo_id),
+            cover_photo_url=COALESCE(excluded.cover_photo_url, collections.cover_photo_url),
+            last_synced_at=COALESCE(excluded.last_synced_at, collections.last_synced_at)
     """,
         (
             collection_data.get('id'),
@@ -199,9 +209,13 @@ def insert_photo(conn: sqlite3.Connection, photo_data: dict[str, Any]) -> None:
     # Convert tags list to JSON string
     tags_json = json.dumps(photo_data.get('tags', []))
 
+    # Use an UPSERT that updates existing rows without performing a DELETE.
+    # `INSERT OR REPLACE` performs a DELETE followed by INSERT which can
+    # trigger ON DELETE CASCADE and remove related rows (e.g. photo_collections).
+    # Using `ON CONFLICT(id) DO UPDATE` preserves the rowid and avoids cascades.
     cursor.execute(
         """
-        INSERT OR REPLACE INTO photos (
+        INSERT INTO photos (
             id, title, description, alt_description,
             created_at, updated_at,
             width, height, color, blur_hash,
@@ -222,6 +236,43 @@ def insert_photo(conn: sqlite3.Connection, photo_data: dict[str, Any]) -> None:
             ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?
         )
+        ON CONFLICT(id) DO UPDATE SET
+            title=COALESCE(excluded.title, photos.title),
+            description=COALESCE(excluded.description, photos.description),
+            alt_description=COALESCE(excluded.alt_description, photos.alt_description),
+            created_at=COALESCE(excluded.created_at, photos.created_at),
+            updated_at=COALESCE(excluded.updated_at, photos.updated_at),
+            width=COALESCE(excluded.width, photos.width),
+            height=COALESCE(excluded.height, photos.height),
+            color=COALESCE(excluded.color, photos.color),
+            blur_hash=COALESCE(excluded.blur_hash, photos.blur_hash),
+            views=COALESCE(excluded.views, photos.views),
+            downloads=COALESCE(excluded.downloads, photos.downloads),
+            likes=COALESCE(excluded.likes, photos.likes),
+            url_raw=COALESCE(excluded.url_raw, photos.url_raw),
+            url_full=COALESCE(excluded.url_full, photos.url_full),
+            url_regular=COALESCE(excluded.url_regular, photos.url_regular),
+            url_small=COALESCE(excluded.url_small, photos.url_small),
+            url_thumb=COALESCE(excluded.url_thumb, photos.url_thumb),
+            photographer_name=COALESCE(excluded.photographer_name, photos.photographer_name),
+            photographer_username=COALESCE(excluded.photographer_username, photos.photographer_username),
+            photographer_url=COALESCE(excluded.photographer_url, photos.photographer_url),
+            photographer_avatar=COALESCE(excluded.photographer_avatar, photos.photographer_avatar),
+            location_name=COALESCE(excluded.location_name, photos.location_name),
+            location_city=COALESCE(excluded.location_city, photos.location_city),
+            location_country=COALESCE(excluded.location_country, photos.location_country),
+            location_latitude=COALESCE(excluded.location_latitude, photos.location_latitude),
+            location_longitude=COALESCE(excluded.location_longitude, photos.location_longitude),
+            exif_make=COALESCE(excluded.exif_make, photos.exif_make),
+            exif_model=COALESCE(excluded.exif_model, photos.exif_model),
+            exif_exposure_time=COALESCE(excluded.exif_exposure_time, photos.exif_exposure_time),
+            exif_aperture=COALESCE(excluded.exif_aperture, photos.exif_aperture),
+            exif_focal_length=COALESCE(excluded.exif_focal_length, photos.exif_focal_length),
+            exif_iso=COALESCE(excluded.exif_iso, photos.exif_iso),
+            tags=COALESCE(excluded.tags, photos.tags),
+            unsplash_url=COALESCE(excluded.unsplash_url, photos.unsplash_url),
+            download_location=COALESCE(excluded.download_location, photos.download_location),
+            last_synced_at=COALESCE(excluded.last_synced_at, photos.last_synced_at)
     """,
         (
             photo_data.get('id'),

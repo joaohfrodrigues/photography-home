@@ -1,4 +1,4 @@
-"""ETL script to sync photos from Unsplash to local database"""
+"""ETL script to sync photos from a provider to local database"""
 
 import argparse
 import logging
@@ -7,7 +7,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
 from dotenv import load_dotenv
 
 # Add parent directory to path for imports
@@ -20,6 +19,9 @@ from backend.database import (
     insert_photo,
     link_photo_to_collection,
 )
+from backend.providers.base import BaseProvider
+from backend.providers.unsplash import UnsplashProvider
+from services.unsplash import UnsplashClient
 
 # Setup logging
 logging.basicConfig(
@@ -29,150 +31,73 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_unsplash_headers(access_key: str) -> dict:
-    """Get headers for Unsplash API requests"""
-    return {
-        'Authorization': f'Client-ID {access_key}',
-        'Accept-Version': 'v1',
-    }
-
-
-def fetch_user_collections(access_key: str, username: str) -> list[dict]:
-    """Fetch all collections for a user"""
-    logger.info(f'Fetching collections for user: {username}')
-
-    headers = get_unsplash_headers(access_key)
-    collections = []
-    page = 1
-
-    while True:
-        url = f'https://api.unsplash.com/users/{username}/collections'
-        params = {'page': page, 'per_page': 30}
-
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        if not data:
-            break
-
-        collections.extend(data)
-        logger.info(f'Fetched {len(data)} collections (page {page})')
-        page += 1
-
-    logger.info(f'Total collections fetched: {len(collections)}')
-    return collections
-
-
-def fetch_collection_photos(
-    access_key: str, collection_id: str, max_photos: int | None = None
-) -> list[dict]:
-    """Fetch all photos from a collection"""
-    logger.info(f'Fetching photos for collection: {collection_id}')
-
-    headers = get_unsplash_headers(access_key)
-    photos = []
-    page = 1
-
-    while True:
-        if max_photos and len(photos) >= max_photos:
-            photos = photos[:max_photos]
-            break
-
-        url = f'https://api.unsplash.com/collections/{collection_id}/photos'
-        params = {'page': page, 'per_page': 30}
-
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        if not data:
-            break
-
-        photos.extend(data)
-        logger.info(f'Fetched {len(data)} photos from collection (page {page})')
-        page += 1
-
-    logger.info(f'Total photos fetched for collection {collection_id}: {len(photos)}')
-    return photos
-
-
-def fetch_user_photos(access_key: str, username: str, max_photos: int | None = None) -> list[dict]:
-    """Fetch user's photos (not in collections)"""
-    logger.info(f'Fetching user photos for: {username}')
-
-    headers = get_unsplash_headers(access_key)
-    photos = []
-    page = 1
-
-    while True:
-        if max_photos and len(photos) >= max_photos:
-            photos = photos[:max_photos]
-            break
-
-        url = f'https://api.unsplash.com/users/{username}/photos'
-        params = {'page': page, 'per_page': 30, 'stats': 'true'}
-
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        if not data:
-            break
-
-        photos.extend(data)
-        logger.info(f'Fetched {len(data)} user photos (page {page})')
-        page += 1
-
-    logger.info(f'Total user photos fetched: {len(photos)}')
-    return photos
-
-
-def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | None = None) -> dict:
-    """Transform Unsplash API photo data to our database schema
+def transform_photo(
+    photo: dict, fetch_exif: bool = False, provider: BaseProvider | None = None
+) -> dict:
+    """Transform API photo data to our database schema
 
     Args:
-        photo: Photo data from Unsplash API
-        fetch_exif: Whether to fetch full EXIF data via individual photo endpoint
-        access_key: Unsplash API key (required if fetch_exif=True)
+        photo: Photo data from the provider
+        fetch_exif: Whether to fetch full EXIF data (if supported by provider)
+        provider: The data provider instance (required if fetch_exif=True)
     """
-    # Extract statistics
-    stats = photo.get('statistics', {})
-    views = stats.get('views', {}).get('total', 0) if stats else 0
-    downloads = stats.get('downloads', {}).get('total', 0) if stats else 0
+    # Extract statistics. Providers may either supply a flattened integer
+    # `views`/`downloads` at the top-level (our service transforms) or a
+    # nested `statistics` object (raw Unsplash API). Prefer flattened
+    # top-level values when present to avoid losing popularity data.
+    views = photo.get('views')
+    downloads = photo.get('downloads')
+    if views is None:
+        stats = photo.get('statistics', {})
+        views = stats.get('views', {}).get('total', 0) if stats else 0
+    if downloads is None:
+        stats = photo.get('statistics', {})
+        downloads = stats.get('downloads', {}).get('total', 0) if stats else 0
+
+    # Provider may return either raw Unsplash API shape (with `urls` dict)
+    # or a flattened canonical shape (with `url_regular`, `url_raw`, ...).
+    # Prefer flattened keys, then fall back to nested `urls`.
+    def _url(field: str) -> str:
+        # field is one of: 'raw','full','regular','small','thumb'
+        flat = photo.get(f'url_{field}')
+        if flat:
+            return flat
+        urls = photo.get('urls') or {}
+        return urls.get(field, '')
 
     # Fetch complete photo details if EXIF requested and not present
-    if fetch_exif and not photo.get('exif', {}).get('make') and access_key:
+    # This part is provider-specific; for now, we assume Unsplash-like behavior
+    if (
+        fetch_exif
+        and not photo.get('exif', {}).get('make')
+        and isinstance(provider, UnsplashProvider)
+    ):
         try:
             logger.debug(f'Fetching EXIF for photo {photo["id"]}')
-            headers = get_unsplash_headers(access_key)
-            response = requests.get(
-                f'https://api.unsplash.com/photos/{photo["id"]}', headers=headers, timeout=10
-            )
-            if response.ok:
-                photo_detail = response.json()
-                # Merge EXIF data
+            photo_detail = provider.client.fetch_photo_details(photo['id'])
+            if photo_detail:
                 photo['exif'] = photo_detail.get('exif', {})
+                # Ensure nested urls in detail are flattened if necessary
+                if photo_detail.get('urls'):
+                    photo.setdefault('url_raw', photo_detail['urls'].get('raw', ''))
+                    photo.setdefault('url_full', photo_detail['urls'].get('full', ''))
+                    photo.setdefault('url_regular', photo_detail['urls'].get('regular', ''))
+                    photo.setdefault('url_small', photo_detail['urls'].get('small', ''))
+                    photo.setdefault('url_thumb', photo_detail['urls'].get('thumb', ''))
         except Exception as e:
             logger.warning(f'Failed to fetch EXIF for {photo["id"]}: {e}')
 
-    # Extract location
+    # Extract location, EXIF, user, and tags
     location = photo.get('location', {}) or {}
-
-    # Extract EXIF
     exif = photo.get('exif', {}) or {}
-
-    # Extract user info
     user = photo.get('user', {}) or {}
-
-    # Extract tags
     tags = [tag.get('title', '') for tag in photo.get('tags', []) if tag.get('title')]
 
     transformed = {
         'id': photo['id'],
-        'title': photo.get('description')
+        'title': photo.get('title')
         or photo.get('alt_description')
-        or f'Photo by {user.get("name", "Unknown")}',
+        or f'Untitled Photo {photo["id"]}',
         'description': photo.get('description', ''),
         'alt_description': photo.get('alt_description', ''),
         'created_at': photo.get('created_at', ''),
@@ -184,17 +109,18 @@ def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | Non
         'views': views,
         'downloads': downloads,
         'likes': photo.get('likes', 0),
-        'url_raw': photo.get('urls', {}).get('raw', ''),
-        'url_full': photo.get('urls', {}).get('full', ''),
-        'url_regular': photo.get('urls', {}).get('regular', ''),
-        'url_small': photo.get('urls', {}).get('small', ''),
-        'url_thumb': photo.get('urls', {}).get('thumb', ''),
+        'url_raw': photo.get('url_raw') or _url('raw'),
+        'url_full': photo.get('url_full') or _url('full'),
+        'url_regular': photo.get('url_regular') or _url('regular'),
+        'url_small': photo.get('url_small') or _url('small'),
+        'url_thumb': photo.get('url_thumb') or _url('thumb'),
         'photographer_name': user.get('name', 'Unknown'),
         'photographer_username': user.get('username', ''),
         'photographer_url': f'https://unsplash.com/@{user.get("username", "")}'
         if user.get('username')
         else '',
-        'photographer_avatar': user.get('profile_image', {}).get('large', ''),
+        'photographer_avatar': photo.get('photographer_avatar')
+        or (user.get('profile_image') or {}).get('large', ''),
         'location_name': location.get('name'),
         'location_city': location.get('city'),
         'location_country': location.get('country'),
@@ -215,34 +141,35 @@ def transform_photo(photo: dict, fetch_exif: bool = False, access_key: str | Non
     return transformed
 
 
-def sync_photos(access_key: str, username: str, max_photos: int | None = None):
-    """Main ETL function to sync photos from Unsplash to database"""
+def sync_data(provider: BaseProvider, username: str, max_photos: int | None = None):
+    """Main ETL function to sync data from a provider to the database"""
     logger.info('=' * 60)
-    logger.info('Starting photo sync from Unsplash')
+    logger.info(f'Starting data sync from provider: {type(provider).__name__}')
     logger.info('=' * 60)
 
     # Initialize database
     init_database()
 
-    # Fetch collections
-    collections = fetch_user_collections(access_key, username)
-
     total_photos_synced = 0
     total_collections_synced = 0
 
     with get_db_connection() as conn:
-        # First, sync user photos with statistics and selective EXIF
-        logger.info('\nSyncing user photos with statistics')
-        user_photos = fetch_user_photos(access_key, username, max_photos)
-
-        # Create a set of photo IDs for quick lookup
+        # Sync all photos from the user profile first
+        # These often have more details like statistics
+        logger.info(f'\nSyncing all photos for user "{username}"')
         photo_ids = set()
+        user_photos_generator = provider.get_user_photos(username)
 
-        for idx, photo in enumerate(user_photos):
+        # Limit photos if max_photos is set
+        user_photos_to_sync = (
+            list(user_photos_generator)[:max_photos] if max_photos else list(user_photos_generator)
+        )
+
+        for idx, photo in enumerate(user_photos_to_sync):
             try:
-                # Fetch EXIF for featured photos (first 2 for testing)
+                # Fetch EXIF for a few photos for testing
                 fetch_exif = idx < 2
-                photo_data = transform_photo(photo, fetch_exif=fetch_exif, access_key=access_key)
+                photo_data = transform_photo(photo, fetch_exif=fetch_exif, provider=provider)
                 insert_photo(conn, photo_data)
                 photo_ids.add(photo['id'])
                 total_photos_synced += 1
@@ -250,36 +177,63 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
                 logger.error(f'Error syncing user photo {photo.get("id")}: {e}')
 
         conn.commit()
-        logger.info(f'Committed {len(user_photos)} user photos (with statistics)')
+        logger.info(f'Committed {len(user_photos_to_sync)} user photos')
 
-        # Then sync collections and link existing photos
-        for collection in collections:
-            # Insert collection metadata
-            collection_data = {
-                'id': collection['id'],
-                'title': collection['title'],
-                'description': collection.get('description', ''),
-                'total_photos': collection.get('total_photos', 0),
-                'published_at': collection.get('published_at'),
-                'updated_at': collection.get('updated_at'),
-                'cover_photo_id': collection.get('cover_photo', {}).get('id')
-                if collection.get('cover_photo')
-                else None,
-                'cover_photo_url': collection.get('cover_photo', {}).get('urls', {}).get('regular')
-                if collection.get('cover_photo')
-                else None,
-                'last_synced_at': datetime.now(timezone.utc).isoformat(),
-            }
-            insert_collection(conn, collection_data)
-            total_collections_synced += 1
+        # Sync collections and link photos
+        logger.info('\nSyncing collections')
+        collections_generator = provider.get_collections()
+        for collection in collections_generator:
+            try:
+                # Insert collection metadata
+                collection_data = {
+                    'id': collection['id'],
+                    'title': collection['title'],
+                    'description': collection.get('description', ''),
+                    'total_photos': collection.get('total_photos', 0),
+                    'published_at': collection.get('published_at'),
+                    'updated_at': collection.get('updated_at'),
+                    'cover_photo_id': (
+                        collection.get('cover_photo', {}).get('id')
+                        if collection.get('cover_photo')
+                        else None
+                    ),
+                    # Support provider shapes that either include a nested `urls`
+                    # dict (original API) or a flattened `cover_photo` with
+                    # `url`/`url_raw`/`url_small` keys (our service transforms).
+                    'cover_photo_url': (
+                        # Prefer flattened `url` if provided by the service
+                        (collection.get('cover_photo') or {}).get('url')
+                        or (collection.get('cover_photo') or {}).get('url_regular')
+                        or (collection.get('cover_photo') or {}).get('url_raw')
+                        # Fallback to nested `urls.regular` from raw API fixture
+                        or (collection.get('cover_photo', {}).get('urls', {}) or {}).get('regular')
+                    ),
+                    'last_synced_at': datetime.now(timezone.utc).isoformat(),
+                }
+                insert_collection(conn, collection_data)
+                total_collections_synced += 1
 
-            logger.info(f'\nLinking photos to collection: {collection["title"]}')
+                # Link photos to the collection
+                logger.info(f'Linking photos for collection: {collection["title"]}')
+                collection_photos_generator = provider.get_photos_in_collection(collection['id'])
 
-            # Fetch collection photos only to get photo IDs and link them
-            photos = fetch_collection_photos(access_key, collection['id'], max_photos)
+                photos_in_collection_to_sync = (
+                    list(collection_photos_generator)[:max_photos]
+                    if max_photos
+                    else list(collection_photos_generator)
+                )
 
-            for photo in photos:
-                try:
+                for photo in photos_in_collection_to_sync:
+                    # If photo hasn't been synced yet, sync it now
+                    if photo['id'] not in photo_ids:
+                        try:
+                            photo_data = transform_photo(photo, provider=provider)
+                            insert_photo(conn, photo_data)
+                            photo_ids.add(photo['id'])
+                            total_photos_synced += 1
+                        except Exception as e:
+                            logger.error(f'Error syncing collection photo {photo.get("id")}: {e}')
+
                     # Link photo to collection
                     link_photo_to_collection(
                         conn,
@@ -287,49 +241,34 @@ def sync_photos(access_key: str, username: str, max_photos: int | None = None):
                         collection['id'],
                         photo.get('created_at', datetime.now(timezone.utc).isoformat()),
                     )
-                except Exception as e:
-                    logger.error(f'Error linking photo {photo.get("id")} to collection: {e}')
-
-            conn.commit()
-            logger.info(f'Linked {len(photos)} photos to collection {collection["title"]}')
-
-        # Sync user photos (has statistics!)
-        logger.info('\nSyncing user photos with statistics')
-        user_photos = fetch_user_photos(access_key, username, max_photos)
-
-        for idx, photo in enumerate(user_photos):
-            try:
-                # Fetch EXIF for featured photos (first 2 for testing)
-                fetch_exif = idx < 2
-                photo_data = transform_photo(photo, fetch_exif=fetch_exif, access_key=access_key)
-                insert_photo(conn, photo_data)
-                total_photos_synced += 1
+                conn.commit()
+                logger.info(
+                    f'Committed {total_collections_synced} collections and linked {len(photos_in_collection_to_sync)} photos'
+                )
             except Exception as e:
-                logger.error(f'Error syncing user photo {photo.get("id")}: {e}')
-
-        conn.commit()
-        logger.info(f'Committed {len(user_photos)} user photos (with statistics)')
+                logger.error(f'Error syncing collection {collection.get("id")}: {e}')
+                conn.rollback()
 
     logger.info('=' * 60)
     logger.info('Sync completed!')
     logger.info(f'Collections synced: {total_collections_synced}')
-    logger.info(f'Photos processed: {total_photos_synced}')
+    logger.info(f'Total unique photos processed: {total_photos_synced}')
     logger.info('=' * 60)
 
 
 def main():
     """Main entry point"""
-    parser = argparse.ArgumentParser(description='Sync photos from Unsplash to local database')
+    parser = argparse.ArgumentParser(description='Sync photos from a provider to local database')
     parser.add_argument(
         '--max-photos',
         type=int,
         default=None,
-        help='Maximum photos per collection (for testing, default: all)',
+        help='Maximum photos per user/collection (for testing, default: all)',
     )
     parser.add_argument(
         '--test',
         action='store_true',
-        help='Test mode: sync only 5 photos per collection',
+        help='Test mode: sync only 5 photos per user/collection',
     )
 
     args = parser.parse_args()
@@ -344,13 +283,14 @@ def main():
         logger.error('UNSPLASH_ACCESS_KEY not found in environment')
         sys.exit(1)
 
+    # Initialize the provider
+    unsplash_client = UnsplashClient(access_key, username)
+    provider = UnsplashProvider(unsplash_client)
+
     max_photos = 5 if args.test else args.max_photos
 
     try:
-        sync_photos(access_key, username, max_photos)
-    except requests.exceptions.RequestException as e:
-        logger.error(f'API request failed: {e}')
-        sys.exit(1)
+        sync_data(provider, username, max_photos)
     except Exception as e:
         logger.error(f'Sync failed: {e}', exc_info=True)
         sys.exit(1)

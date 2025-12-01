@@ -1,19 +1,10 @@
 """Services module"""
 
 from .compliance import trigger_download
-from .photo_details import fetch_photo_details
-from .unsplash import (
-    fetch_collection_photos,
-    fetch_latest_user_photos,
-    fetch_unsplash_photos,
-    fetch_user_collections,
-)
+from .unsplash import UnsplashClient
 
+# Prefer creating an `UnsplashClient` and calling its methods directly.
 __all__ = [
-    'fetch_unsplash_photos',
-    'fetch_user_collections',
-    'fetch_collection_photos',
-    'fetch_latest_user_photos',
+    'UnsplashClient',
     'trigger_download',
-    'fetch_photo_details',
 ]
