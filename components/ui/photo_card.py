@@ -4,7 +4,6 @@ from fasthtml.common import *
 
 from components.ui.filters import create_filters
 from components.ui.search_bar import create_search_bar
-from config import EXIF_LAZY_LOADING
 
 
 def distribute_to_columns(photos, num_columns=3):
@@ -93,9 +92,9 @@ def create_photo_item(photo, index=0, layout='gallery'):
     photographer_url = photo.get('user', {}).get('profile_url', '')
     photo_unsplash_url = photo.get('links', {}).get('html', '')
 
-    # EXIF data
-    camera_full = 'Loading...' if EXIF_LAZY_LOADING else 'N/A'
-    exif_placeholder = 'Loading...' if EXIF_LAZY_LOADING else 'N/A'
+    # EXIF data (no lazy-loading feature — display placeholders)
+    camera_full = 'N/A'
+    exif_placeholder = 'N/A'
 
     # Common data attributes
     data_attrs = {
@@ -122,7 +121,7 @@ def create_photo_item(photo, index=0, layout='gallery'):
         'data-photographer': photographer_name,
         'data-photographer-url': photographer_url,
         'data-unsplash-url': photo_unsplash_url,
-        'data-lazy-exif': 'true' if EXIF_LAZY_LOADING else 'false',
+        'data-lazy-exif': 'false',
         'data-lightbox-url': photo.get('url_raw', photo.get('url_regular', photo.get('url', ''))),
     }
 

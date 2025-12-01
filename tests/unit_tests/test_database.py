@@ -184,3 +184,52 @@ def test_fts_index_updated(test_db):
 
         assert result is not None
         assert result['id'] == 'test789'
+
+
+def test_upsert_preserves_links(test_db):
+    """Ensure that upserting a photo does not remove links to collections"""
+    photo = {
+        'id': 'link-test',
+        'title': 'Linked Photo',
+        'width': 800,
+        'height': 600,
+        'tags': [],
+        'last_synced_at': '2024-01-01T00:00:00Z',
+    }
+
+    collection = {
+        'id': 'col-1',
+        'title': 'Test Collection',
+        'total_photos': 1,
+        'published_at': '2024-01-01T00:00:00Z',
+        'updated_at': '2024-01-01T00:00:00Z',
+        'last_synced_at': '2024-01-01T00:00:00Z',
+    }
+
+    photo_updated = {
+        'id': 'link-test',
+        'title': 'Linked Photo (updated)',
+        'views': 42,
+        'last_synced_at': '2024-01-02T00:00:00Z',
+    }
+
+    with get_db_connection() as conn:
+        # Insert collection and photo, link them
+        from backend.database import insert_collection, link_photo_to_collection
+
+        insert_collection(conn, collection)
+        insert_photo(conn, photo)
+        link_photo_to_collection(conn, photo['id'], collection['id'], '2024-01-01T00:00:00Z')
+        conn.commit()
+
+        # Upsert the photo with updated fields
+        insert_photo(conn, photo_updated)
+        conn.commit()
+
+        # Ensure the photo still links to the collection
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT COUNT(*) FROM photo_collections WHERE photo_id = ? AND collection_id = ?',
+            (photo['id'], collection['id']),
+        )
+        assert cursor.fetchone()[0] == 1
