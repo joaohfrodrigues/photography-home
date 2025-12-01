@@ -127,5 +127,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 btn.style.background = 'rgba(0, 0, 0, 0.5)';
             });
         });
+
+        // Attach generic swipe handler (pointer + touch) from `static/js/swipe.js`.
+        // This keeps swipe logic reusable (carousel, lightbox, etc.).
+        if (typeof attachSwipe === 'function') {
+            attachSwipe(carousel, {
+                threshold: 50,
+                verticalThreshold: 100,
+                onSwipeLeft: () => {
+                    nextImage();
+                    stopCarousel();
+                },
+                onSwipeRight: () => {
+                    prevImage();
+                    stopCarousel();
+                },
+            });
+        }
     });
 });
