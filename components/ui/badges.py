@@ -100,7 +100,7 @@ def render_badges(badges):
             position: absolute;
             top: {12 + (i * 40)}px;
             left: 12px;
-            background: {badge["color"]};
+            background: {badge['color']};
             color: white;
             padding: 6px 12px;
             border-radius: 20px;
