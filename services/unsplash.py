@@ -59,7 +59,7 @@ class UnsplashClient:
                     'url_regular': photo.get('urls', {}).get('regular', ''),
                     'url_small': photo.get('urls', {}).get('small', ''),
                     'url_thumb': photo.get('urls', {}).get('thumb', ''),
-                    'title': photo.get('alt_description') or f"Photo {photo['id']}",
+                    'title': photo.get('alt_description') or 'Untitled',
                     'description': photo.get('description', ''),
                     'alt_description': photo.get('alt_description', ''),
                     'views': views,
