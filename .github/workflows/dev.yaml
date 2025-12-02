@@ -1,9 +1,9 @@
 name: 'CI/CD Pipeline'
 
 on:
-    push: {}
-    pull_request: {}
-    workflow_dispatch: {}
+    push:
+        branches:
+            - '**'
 
 concurrency:
     group: ci-pipeline-${{ github.ref }}
