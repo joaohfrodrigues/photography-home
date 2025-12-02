@@ -92,9 +92,17 @@ def create_photo_item(photo, index=0, layout='gallery'):
     photographer_url = photo.get('user', {}).get('profile_url', '')
     photo_unsplash_url = photo.get('links', {}).get('html', '')
 
-    # EXIF data (no lazy-loading feature — display placeholders)
-    camera_full = 'N/A'
-    exif_placeholder = 'N/A'
+    # EXIF data - now populated from ETL
+    exif = photo.get('exif', {}) or {}
+    camera_make = exif.get('make', '')
+    camera_model = exif.get('model', '')
+    camera_full = (
+        f'{camera_make} {camera_model}'.strip() if (camera_make or camera_model) else 'N/A'
+    )
+    exposure = exif.get('exposure_time', 'N/A')
+    aperture = f"f/{exif.get('aperture')}" if exif.get('aperture') else 'N/A'
+    focal = f"{exif.get('focal_length')}mm" if exif.get('focal_length') else 'N/A'
+    iso = str(exif.get('iso')) if exif.get('iso') else 'N/A'
 
     # Common data attributes
     data_attrs = {
@@ -111,10 +119,10 @@ def create_photo_item(photo, index=0, layout='gallery'):
         'data-color': photo.get('color', ''),
         'data-location': location,
         'data-camera': camera_full,
-        'data-exposure': exif_placeholder,
-        'data-aperture': exif_placeholder,
-        'data-focal': exif_placeholder,
-        'data-iso': exif_placeholder,
+        'data-exposure': exposure,
+        'data-aperture': aperture,
+        'data-focal': focal,
+        'data-iso': iso,
         'data-views': str(photo.get('views', 0)),
         'data-downloads': str(photo.get('downloads', 0)),
         'data-dimensions': f'{width} × {height}',

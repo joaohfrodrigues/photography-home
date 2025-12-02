@@ -3,6 +3,8 @@
 # Setup: pre-commit install
 # Run manually: pre-commit run --all-files
 
+minimum_pre_commit_version: '2.20.0'
+
 repos:
     # Python code formatting and linting
     - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -59,7 +61,10 @@ repos:
       hooks:
           - id: detect-secrets
             args: [--baseline, .secrets.baseline]
-            exclude: package.lock.json
+            # Workflows reference secrets via ${{ secrets.* }} and should not be
+            # flagged as secrets by detect-secrets. Exclude the workflows
+            # directory from checks to avoid false positives.
+            exclude: '^\.github/workflows/.*'
 
     # Markdown linting
     - repo: https://github.com/igorshubovych/markdownlint-cli

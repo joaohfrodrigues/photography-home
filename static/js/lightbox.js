@@ -233,11 +233,6 @@ function openLightbox(index) {
         triggerDownload(photo.downloadLocation, photo.photoId);
     }
 
-    // Fetch detailed EXIF data on-demand only if lazy loading is enabled
-    if (photo.lazyExif && photo.photoId) {
-        fetchPhotoDetails(photo.photoId);
-    }
-
     // Attach generic swipe handler if available (from static/js/swipe.js)
     if (typeof attachSwipe === 'function') {
         // Detach previous if somehow still set
@@ -358,11 +353,6 @@ function navigateLightbox(direction) {
     const photo = photos[currentPhotoIndex];
     if (photo.downloadLocation && photo.photoId) {
         triggerDownload(photo.downloadLocation, photo.photoId);
-    }
-
-    // Fetch EXIF for new photo if lazy loading enabled
-    if (photo.lazyExif && photo.photoId) {
-        fetchPhotoDetails(photo.photoId);
     }
 }
 
