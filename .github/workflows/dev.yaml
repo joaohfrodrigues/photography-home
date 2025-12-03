@@ -39,7 +39,7 @@ jobs:
                   pip install '.[dev]'
 
             - name: Run pre-commit checks
-              uses: pre-commit/action@v4
+              uses: pre-commit/action@v3.0.1
 
             - name: Run pytest
               run: pytest -q
