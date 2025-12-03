@@ -352,6 +352,17 @@ def get_photo_count() -> int:
         return cursor.fetchone()[0]
 
 
+def get_existing_photos_map(conn: sqlite3.Connection) -> dict[str, str]:
+    """Get map of photo_id -> updated_at for all existing photos
+
+    Returns:
+        Dictionary mapping photo ID to its updated_at timestamp from the DB
+    """
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, updated_at FROM photos')
+    return {row[0]: row[1] for row in cursor.fetchall()}
+
+
 def get_collection_count() -> int:
     """Get total number of collections in database"""
     with get_db_connection() as conn:

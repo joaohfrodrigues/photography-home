@@ -45,7 +45,7 @@ def test_fixture_photo_persists_all_fields(test_db):
     fixture = load_fixture('photo_ON9hQ_02Cn4.json')
 
     # Transform (simulate fetching EXIF already present in fixture)
-    transformed = transform_photo(fixture, fetch_exif=False)
+    transformed = transform_photo(fixture)
 
     with get_db_connection() as conn:
         insert_photo(conn, transformed)

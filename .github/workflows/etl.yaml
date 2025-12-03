@@ -4,12 +4,32 @@ on:
     schedule:
         - cron: '0 0 * * *' # Runs at midnight everyday
     workflow_dispatch: # Allows you to click "Run Now" manually for testing
+        inputs:
+            fetch_mode:
+                description: 'Photo fetch mode: batch (fast) or details (full metadata)'
+                required: false
+                default: 'batch'
+                type: choice
+                options:
+                    - 'batch'
+                    - 'details'
+            full_load:
+                description: 'If true, run a full load (ignore incremental skip)'
+                required: false
+                default: 'false'
+                type: boolean
 
 jobs:
     update-data:
         runs-on: ubuntu-latest
         permissions:
             contents: write # Crucial! Allows the robot to commit changes
+    concurrency:
+        group: daily-photo-sync
+        cancel-in-progress: true
+    defaults:
+        run:
+            shell: bash
 
         steps:
             - name: Check out repo
@@ -20,15 +40,35 @@ jobs:
               with:
                   python-version: '3.12'
 
+            - name: Cache pip
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pip-
+
             - name: Install dependencies
               run: |
-                  pip install requests python-dotenv
+                  set -euo pipefail
+                  python -m pip install --upgrade pip build
+                  # Always install the project from pyproject.toml (PEP 517/518)
+                  echo "Installing project and dependencies from pyproject.toml"
+                  pip install .
 
             - name: Run ETL Script
               env:
                   UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
                   UNSPLASH_USERNAME: ${{ secrets.UNSPLASH_USERNAME }}
-              run: python backend/etl.py
+                  FETCH_MODE: ${{ github.event.inputs.fetch_mode || 'batch' }}
+              run: |
+                  set -euo pipefail
+                  FETCH_MODE_INPUT="${{ github.event.inputs.fetch_mode || 'batch' }}"
+                  if [ "${{ github.event.inputs.full_load || 'false' }}" = "true" ]; then
+                    python backend/etl.py --fetch-mode "$FETCH_MODE_INPUT" --full-load
+                  else
+                    python backend/etl.py --fetch-mode "$FETCH_MODE_INPUT"
+                  fi
 
             - name: Commit and Push if changed
               run: |

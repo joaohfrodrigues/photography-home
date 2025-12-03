@@ -61,7 +61,7 @@ def test_collection_and_photo_link_persisted(test_db):
         'last_synced_at': '2024-01-01T00:00:00Z',
     }
 
-    transformed_photo = transform_photo(photo, fetch_exif=False)
+    transformed_photo = transform_photo(photo)
 
     with get_db_connection() as conn:
         # Insert collection and photo

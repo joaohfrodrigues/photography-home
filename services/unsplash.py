@@ -19,11 +19,14 @@ class UnsplashClient:
         access_key: Unsplash API access key (Client ID). If falsy, API calls are
             skipped and fallback data is returned where applicable.
         username: Unsplash username to fetch user-specific endpoints.
+        fetch_mode: 'batch' (default) or 'details' - controls whether to fetch
+            full photo details (EXIF, location) for each photo.
     """
 
-    def __init__(self, access_key: str = None, username: str = None):
+    def __init__(self, access_key: str = None, username: str = None, fetch_mode: str = 'batch'):
         self.access_key = access_key
         self.username = username
+        self.fetch_mode = fetch_mode
         self.base_url = 'https://api.unsplash.com'
         self.headers = {'Authorization': f'Client-ID {self.access_key}'} if self.access_key else {}
 
@@ -44,6 +47,11 @@ class UnsplashClient:
         ]
 
     def _transform_photo_data(self, photos: list[dict]) -> list[dict]:
+        """Transform photo data from API response to our canonical format.
+
+        Note: This does NOT fetch additional details - use enrich_photo_with_details
+        for that. This keeps listing fast and allows ETL to decide what to enrich.
+        """
         photo_data = []
         for photo in photos:
             statistics = photo.get('statistics', {})
@@ -88,6 +96,10 @@ class UnsplashClient:
                         'country': photo.get('location', {}).get('country')
                         if photo.get('location')
                         else None,
+                        # Preserve nested position object (latitude/longitude)
+                        'position': photo.get('location', {}).get('position')
+                        if photo.get('location')
+                        else None,
                     },
                     'tags': [tag.get('title', '') for tag in photo.get('tags', [])],
                     'user': {
@@ -108,6 +120,36 @@ class UnsplashClient:
                 }
             )
         return photo_data
+
+    def enrich_photo_with_details(self, photo: dict) -> dict:
+        """Fetch and merge full photo details (EXIF, location) into a photo dict.
+
+        Call this explicitly for photos that need detailed metadata. Returns the
+        enriched photo dict (modifies in-place and returns for convenience).
+
+        Args:
+            photo: Photo dict from listing APIs (must have 'id' key)
+
+        Returns:
+            The same photo dict, enriched with EXIF and location if available
+        """
+        if not photo.get('exif', {}).get('make'):  # Only fetch if EXIF not already present
+            try:
+                photo_id = photo.get('id')
+                if photo_id:
+                    logger.info(f'Enriching photo {photo_id} with detailed metadata')
+                    details = self.fetch_photo_details(photo_id)
+                    if details:
+                        # Merge details into photo (prefer detail values)
+                        photo.update(
+                            {
+                                'exif': details.get('exif', {}),
+                                'location': details.get('location') or photo.get('location'),
+                            }
+                        )
+            except Exception as e:
+                logger.warning(f'Failed to enrich photo {photo.get("id")} with details: {e}')
+        return photo
 
     # ----- Public methods -----
     def fetch_photos(self) -> list[dict]:

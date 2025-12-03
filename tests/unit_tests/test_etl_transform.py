@@ -59,7 +59,7 @@ class TestTransformPhoto:
 
     def test_transform_collection_photo(self, collection_photo):
         """Test transforming a photo from collection endpoint (no EXIF, no stats)"""
-        result = transform_photo(collection_photo, fetch_exif=False)
+        result = transform_photo(collection_photo)
 
         # Basic fields
         assert result['id'] == collection_photo['id']
@@ -89,7 +89,7 @@ class TestTransformPhoto:
 
     def test_transform_user_photo_with_stats(self, user_photo_with_stats):
         """Test transforming a photo from user photos endpoint with statistics"""
-        result = transform_photo(user_photo_with_stats, fetch_exif=False)
+        result = transform_photo(user_photo_with_stats)
 
         # Statistics should be populated
         stats = user_photo_with_stats.get('statistics', {})
@@ -107,7 +107,7 @@ class TestTransformPhoto:
 
     def test_transform_photo_with_exif(self, photo_with_exif):
         """Test transforming a photo from individual photo endpoint with EXIF"""
-        result = transform_photo(photo_with_exif, fetch_exif=False)
+        result = transform_photo(photo_with_exif)
 
         # EXIF should be populated (already in the data)
         exif = photo_with_exif.get('exif', {})
@@ -122,7 +122,7 @@ class TestTransformPhoto:
 
     def test_transform_with_location(self, photo_with_exif):
         """Test location data transformation"""
-        result = transform_photo(photo_with_exif, fetch_exif=False)
+        result = transform_photo(photo_with_exif)
 
         location = photo_with_exif.get('location', {})
         if location:
@@ -137,7 +137,7 @@ class TestTransformPhoto:
 
     def test_transform_with_tags(self, photo_with_exif):
         """Test tags transformation"""
-        result = transform_photo(photo_with_exif, fetch_exif=False)
+        result = transform_photo(photo_with_exif)
 
         tags = photo_with_exif.get('tags', [])
         expected_tags = [tag.get('title', '') for tag in tags if tag.get('title')]
@@ -148,7 +148,7 @@ class TestTransformPhoto:
 
     def test_transform_creates_title(self, collection_photo):
         """Test that transform creates a title from description or alt_description"""
-        result = transform_photo(collection_photo, fetch_exif=False)
+        result = transform_photo(collection_photo)
 
         # Should have a title (either description, alt_description, or fallback)
         assert result['title']
@@ -156,7 +156,7 @@ class TestTransformPhoto:
 
     def test_transform_has_sync_timestamp(self, collection_photo):
         """Test that transform adds last_synced_at timestamp"""
-        result = transform_photo(collection_photo, fetch_exif=False)
+        result = transform_photo(collection_photo)
 
         assert 'last_synced_at' in result
         assert result['last_synced_at']
@@ -170,7 +170,7 @@ class TestEXIFRetrieval:
 
     def test_exif_data_from_individual_endpoint(self, photo_with_exif_and_location):
         """Test that EXIF data is correctly extracted from individual photo endpoint"""
-        result = transform_photo(photo_with_exif_and_location, fetch_exif=False)
+        result = transform_photo(photo_with_exif_and_location)
 
         # Verify EXIF data is populated
         assert result['exif_make'] == 'SONY'
@@ -182,7 +182,7 @@ class TestEXIFRetrieval:
 
     def test_exif_not_in_user_photos_endpoint(self, user_photo_with_stats):
         """Test that EXIF data is NOT available from user photos endpoint"""
-        result = transform_photo(user_photo_with_stats, fetch_exif=False)
+        result = transform_photo(user_photo_with_stats)
 
         # EXIF should be None (not available from user photos endpoint)
         assert result['exif_make'] is None
@@ -198,7 +198,7 @@ class TestLocationRetrieval:
 
     def test_location_data_from_individual_endpoint(self, photo_with_exif_and_location):
         """Test that location data is correctly extracted from individual photo endpoint"""
-        result = transform_photo(photo_with_exif_and_location, fetch_exif=False)
+        result = transform_photo(photo_with_exif_and_location)
 
         # Verify location data is populated
         assert result['location_name'] == 'Test Island, Test Region, Test Country'
@@ -211,7 +211,7 @@ class TestLocationRetrieval:
 
     def test_location_not_in_user_photos_endpoint(self, user_photo_with_stats):
         """Test that location data is NOT available from user photos endpoint"""
-        result = transform_photo(user_photo_with_stats, fetch_exif=False)
+        result = transform_photo(user_photo_with_stats)
 
         # Location should be None (not available from user photos endpoint)
         assert result['location_name'] is None
@@ -222,7 +222,7 @@ class TestLocationRetrieval:
 
     def test_location_coordinates_are_floats(self, photo_with_exif_and_location):
         """Test that coordinates are stored as floats"""
-        result = transform_photo(photo_with_exif_and_location, fetch_exif=False)
+        result = transform_photo(photo_with_exif_and_location)
 
         # Coordinates should be float type
         assert isinstance(result['location_latitude'], float)

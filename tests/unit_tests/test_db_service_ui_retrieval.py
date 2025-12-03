@@ -53,9 +53,9 @@ def test_db_service_returns_ui_shapes(test_db):
     collection = load_fixture('collection.json')
 
     # Transform photos
-    t_a = transform_photo(photo_a, fetch_exif=False)
-    t_b = transform_photo(photo_b, fetch_exif=False)
-    t_c = transform_photo(photo_c, fetch_exif=False)
+    t_a = transform_photo(photo_a)
+    t_b = transform_photo(photo_b)
+    t_c = transform_photo(photo_c)
 
     # Prepare collection payload
     collection_data = {

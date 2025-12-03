@@ -5,7 +5,7 @@ from collections.abc import Generator
 from typing import Any
 
 from backend.providers.base import validate_photo_structure
-from config import ETL_STRICT_VALIDATION, UNSPLASH_FETCH_MODE
+from config import ETL_STRICT_VALIDATION, FETCH_MODE
 from services.unsplash import UnsplashClient
 
 from .base import BaseProvider
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class UnsplashProvider(BaseProvider):
     """Provider for fetching data from the Unsplash API using UnsplashClient.
 
-    Supports a fetch mode controlled by `UNSPLASH_FETCH_MODE` ('batch' or
+    Supports a fetch mode controlled by `FETCH_MODE` ('batch' or
     'details'). 'batch' yields photos via the client's paginated helper.
     'details' is a test path that fetches a single photo's detailed payload
     using the `/photos/{id}` endpoint.
@@ -24,7 +24,7 @@ class UnsplashProvider(BaseProvider):
 
     def __init__(self, client: UnsplashClient, fetch_mode: str | None = None):
         self.client = client
-        self.fetch_mode = fetch_mode or UNSPLASH_FETCH_MODE
+        self.fetch_mode = fetch_mode or FETCH_MODE
 
     def get_collections(self) -> Generator[dict[str, Any], None, None]:
         """Yield collections for the configured user (uses client's collection endpoint).
