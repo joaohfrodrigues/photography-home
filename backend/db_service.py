@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from backend.database import get_db_connection
+from config import DEFAULT_USER_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def _row_to_dict(row) -> dict[str, Any]:
         },
         'tags': tags,
         'user': {
-            'name': data.get('photographer_name') or 'Unknown',
+            'name': data.get('photographer_name') or DEFAULT_USER_NAME,
             'username': data.get('photographer_username') or '',
             'profile_url': data.get('photographer_url') or '',
         },

@@ -4,6 +4,62 @@ from fasthtml.common import *
 
 from components.ui.filters import create_filters
 from components.ui.search_bar import create_search_bar
+from config import DEFAULT_EXIF_VALUES
+
+
+def _format_location(location_data):
+    """Extract and format location from location dict."""
+    if not location_data:
+        return ''
+    parts = []
+    if location_data.get('name'):
+        parts.append(location_data['name'])
+    else:
+        if location_data.get('city'):
+            parts.append(location_data['city'])
+        if location_data.get('country'):
+            parts.append(location_data['country'])
+    return ', '.join(parts)
+
+
+def _format_exif(exif):
+    """Extract and format EXIF data with defaults."""
+    exif = exif or {}
+    make = exif.get('make') or DEFAULT_EXIF_VALUES['make']
+    model = exif.get('model') or DEFAULT_EXIF_VALUES['model']
+    camera = f'{make} {model}'.strip() if make or model else DEFAULT_EXIF_VALUES['make']
+    exposure = exif.get('exposure_time') or DEFAULT_EXIF_VALUES['exposure_time']
+    aperture = (
+        f"f/{exif.get('aperture')}" if exif.get('aperture') else DEFAULT_EXIF_VALUES['aperture']
+    )
+    focal = (
+        f"{exif.get('focal_length')}mm"
+        if exif.get('focal_length')
+        else DEFAULT_EXIF_VALUES['focal_length']
+    )
+    iso = str(exif.get('iso')) if exif.get('iso') else DEFAULT_EXIF_VALUES['iso']
+    return camera, exposure, aperture, focal, iso
+
+
+def _create_attribution():
+    """Create reusable attribution overlay."""
+    return Div(
+        Span('Photo by '),
+        A(
+            '...',  # Placeholder - filled by caller
+            href='#',
+            target='_blank',
+            rel='noopener noreferrer',
+        ),
+        Span(' on '),
+        A(
+            'Unsplash',
+            href='https://unsplash.com',
+            target='_blank',
+            rel='noopener noreferrer',
+        ),
+        cls='photo-attribution',
+    )
 
 
 def distribute_to_columns(photos, num_columns=3):
@@ -64,23 +120,9 @@ def create_photo_item(photo, index=0, layout='gallery'):
     else:
         orientation = 'square'
 
-    # Extract year
+    # Extract and format data
     year = photo.get('created_at', '')[:4] if photo.get('created_at') else ''
-
-    # Format location
-    location_parts = []
-    if photo.get('location'):
-        location_data = photo['location']
-        if location_data.get('name'):
-            location_parts.append(location_data['name'])
-        elif location_data.get('city') or location_data.get('country'):
-            if location_data.get('city'):
-                location_parts.append(location_data['city'])
-            if location_data.get('country'):
-                location_parts.append(location_data['country'])
-    location = ', '.join(location_parts)
-
-    # Format tags
+    location = _format_location(photo.get('location'))
     tags = photo.get('tags', [])
     tags_html = (
         ''.join([f'<span class="lightbox-tag">{tag}</span>' for tag in tags[:10]]) if tags else ''
@@ -92,17 +134,8 @@ def create_photo_item(photo, index=0, layout='gallery'):
     photographer_url = photo.get('user', {}).get('profile_url', '')
     photo_unsplash_url = photo.get('links', {}).get('html', '')
 
-    # EXIF data - now populated from ETL
-    exif = photo.get('exif', {}) or {}
-    camera_make = exif.get('make', '')
-    camera_model = exif.get('model', '')
-    camera_full = (
-        f'{camera_make} {camera_model}'.strip() if (camera_make or camera_model) else 'N/A'
-    )
-    exposure = exif.get('exposure_time', 'N/A')
-    aperture = f"f/{exif.get('aperture')}" if exif.get('aperture') else 'N/A'
-    focal = f"{exif.get('focal_length')}mm" if exif.get('focal_length') else 'N/A'
-    iso = str(exif.get('iso')) if exif.get('iso') else 'N/A'
+    # EXIF data with defaults for display
+    camera, exposure, aperture, focal, iso = _format_exif(photo.get('exif'))
 
     # Common data attributes
     data_attrs = {
@@ -118,7 +151,7 @@ def create_photo_item(photo, index=0, layout='gallery'):
         'data-orientation': orientation,
         'data-color': photo.get('color', ''),
         'data-location': location,
-        'data-camera': camera_full,
+        'data-camera': camera,
         'data-exposure': exposure,
         'data-aperture': aperture,
         'data-focal': focal,
@@ -133,14 +166,16 @@ def create_photo_item(photo, index=0, layout='gallery'):
         'data-lightbox-url': photo.get('url_raw', photo.get('url_regular', photo.get('url', ''))),
     }
 
-    # Choose image URL based on layout
-    if layout == 'gallery':
-        img_src = photo.get('url_regular', photo['url'])
+    # Image source and layout-specific styling
+    img_src = photo.get('url_regular', photo['url'])
+    is_gallery = layout == 'gallery'
+
+    if is_gallery:
         img_loading = 'lazy'
         css_class = 'gallery-item'
         style = f'aspect-ratio: {aspect_ratio:.3f};'
-    else:  # grid layout for homepage
-        img_src = photo.get('url_regular', photo['url'])  # Regular quality for display
+        img_style = None
+    else:
         img_loading = 'lazy' if index > 8 else 'eager'
         css_class = 'photo-card gallery-item'
         style = f"""
@@ -155,74 +190,50 @@ def create_photo_item(photo, index=0, layout='gallery'):
             cursor: pointer;
             aspect-ratio: {aspect_ratio:.3f};
         """
+        img_style = """
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        """
 
-    # Build the photo item
-    if layout == 'gallery':
-        # Gallery layout (collection pages) - unified with homepage
-        return Div(
-            Img(src=img_src, alt=photo['title'], loading=img_loading),
-            Div(photo['title'], cls='photo-title'),
-            # Attribution overlay
-            Div(
-                Span('Photo by '),
-                A(
-                    photographer_name,
-                    href=photographer_url,
-                    target='_blank',
-                    rel='noopener noreferrer',
-                ),
-                Span(' on '),
-                A(
-                    'Unsplash',
-                    href='https://unsplash.com',
-                    target='_blank',
-                    rel='noopener noreferrer',
-                ),
-                cls='photo-attribution',
-            ),
-            cls=css_class,
-            style=style,
-            **data_attrs,
-        )
-    else:
-        # Grid layout (homepage masonry) - unified with collection pages
-        return Div(
-            Img(
-                src=img_src,
-                alt=photo['title'],
-                loading=img_loading,
-                style="""
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-                """,
-            ),
-            # Photo title
-            Div(photo['title'], cls='photo-title'),
-            # Attribution overlay
-            Div(
-                Span('Photo by '),
-                A(
-                    photographer_name,
-                    href=photographer_url,
-                    target='_blank',
-                    rel='noopener noreferrer',
-                ),
-                Span(' on '),
-                A(
-                    'Unsplash',
-                    href='https://unsplash.com',
-                    target='_blank',
-                    rel='noopener noreferrer',
-                ),
-                cls='photo-attribution',
-            ),
-            cls=css_class,
-            style=style,
-            **data_attrs,
-        )
+    # Build photo image
+    img = Img(
+        src=img_src,
+        alt=photo['title'],
+        loading=img_loading,
+        style=img_style,
+    )
+
+    # Build attribution
+    attribution = Div(
+        Span('Photo by '),
+        A(
+            photographer_name,
+            href=photographer_url,
+            target='_blank',
+            rel='noopener noreferrer',
+        ),
+        Span(' on '),
+        A(
+            'Unsplash',
+            href='https://unsplash.com',
+            target='_blank',
+            rel='noopener noreferrer',
+        ),
+        cls='photo-attribution',
+    )
+
+    # Return unified structure
+    return Div(
+        img,
+        Div(photo['title'], cls='photo-title'),
+        attribution,
+        cls=css_class,
+        style=style,
+        **data_attrs,
+    )
 
 
 def create_photo_container(

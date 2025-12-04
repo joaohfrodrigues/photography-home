@@ -37,6 +37,19 @@ FEATURED_COLLECTION_IDS = [
     # Example: 'py2j-CBPSoM',  # 24' Gerês
 ]
 
+# Default values for missing EXIF and metadata fields
+# Centralized here to ensure consistency across all code locations (ETL, API, frontend)
+DEFAULT_EXIF_VALUES = {
+    'make': 'Unknown',
+    'model': 'Unknown',
+    'exposure_time': 'N/A',
+    'aperture': 'N/A',
+    'focal_length': 'N/A',
+    'iso': 'N/A',
+}
+DEFAULT_USER_NAME = 'Unknown'
+DEFAULT_LOCATION_NAME = 'Unknown'
+
 # Log configuration status
 logger.info(f'Unsplash configured: {bool(UNSPLASH_ACCESS_KEY)}')
 logger.info(f'Unsplash username: {UNSPLASH_USERNAME}')

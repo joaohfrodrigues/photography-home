@@ -9,6 +9,8 @@ import logging
 
 import requests
 
+from config import DEFAULT_EXIF_VALUES, DEFAULT_USER_NAME
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,12 +81,15 @@ class UnsplashClient:
                     'color': photo.get('color', '#000000'),
                     'blur_hash': photo.get('blur_hash', ''),
                     'exif': {
-                        'make': photo.get('exif', {}).get('make', 'Unknown'),
-                        'model': photo.get('exif', {}).get('model', 'Unknown'),
-                        'exposure_time': photo.get('exif', {}).get('exposure_time', 'N/A'),
-                        'aperture': photo.get('exif', {}).get('aperture', 'N/A'),
-                        'focal_length': photo.get('exif', {}).get('focal_length', 'N/A'),
-                        'iso': photo.get('exif', {}).get('iso', 'N/A'),
+                        'make': photo.get('exif', {}).get('make') or DEFAULT_EXIF_VALUES['make'],
+                        'model': photo.get('exif', {}).get('model') or DEFAULT_EXIF_VALUES['model'],
+                        'exposure_time': photo.get('exif', {}).get('exposure_time')
+                        or DEFAULT_EXIF_VALUES['exposure_time'],
+                        'aperture': photo.get('exif', {}).get('aperture')
+                        or DEFAULT_EXIF_VALUES['aperture'],
+                        'focal_length': photo.get('exif', {}).get('focal_length')
+                        or DEFAULT_EXIF_VALUES['focal_length'],
+                        'iso': photo.get('exif', {}).get('iso') or DEFAULT_EXIF_VALUES['iso'],
                     },
                     'location': {
                         'name': photo.get('location', {}).get('name')
@@ -103,7 +108,7 @@ class UnsplashClient:
                     },
                     'tags': [tag.get('title', '') for tag in photo.get('tags', [])],
                     'user': {
-                        'name': photo.get('user', {}).get('name', 'Unknown'),
+                        'name': photo.get('user', {}).get('name') or DEFAULT_USER_NAME,
                         'username': photo.get('user', {}).get('username', ''),
                         'portfolio_url': photo.get('user', {}).get('portfolio_url', ''),
                         'profile_url': (
@@ -121,7 +126,7 @@ class UnsplashClient:
             )
         return photo_data
 
-    def enrich_photo_with_details(self, photo: dict) -> dict:
+    def enrich_photo_with_details(self, photo: dict, force_enrich: bool = False) -> dict:
         """Fetch and merge full photo details (EXIF, location) into a photo dict.
 
         Call this explicitly for photos that need detailed metadata. Returns the
@@ -129,11 +134,21 @@ class UnsplashClient:
 
         Args:
             photo: Photo dict from listing APIs (must have 'id' key)
+            force_enrich: If True, always fetch details even if EXIF is present.
+                         Use during --full-load to refresh all metadata.
 
         Returns:
             The same photo dict, enriched with EXIF and location if available
         """
-        if not photo.get('exif', {}).get('make'):  # Only fetch if EXIF not already present
+        exif = photo.get('exif', {})
+        # Check if EXIF is missing, empty, or contains only default values
+        has_real_exif = any(
+            exif.get(key) and exif.get(key) not in (DEFAULT_EXIF_VALUES.get(key), None)
+            for key in DEFAULT_EXIF_VALUES
+        )
+
+        # Fetch if: no real EXIF data, or force_enrich flag is set
+        if force_enrich or not has_real_exif:
             try:
                 photo_id = photo.get('id')
                 if photo_id:
@@ -195,24 +210,27 @@ class UnsplashClient:
             )
             response.raise_for_status()
             collections = response.json()
-            collection_data = [
-                {
-                    'id': c['id'],
-                    'title': c['title'],
-                    'description': c.get('description', ''),
-                    'total_photos': c.get('total_photos', 0),
-                    'cover_photo': {
-                        'url': c.get('cover_photo', {}).get('urls', {}).get('regular', ''),
-                        'url_raw': c.get('cover_photo', {}).get('urls', {}).get('raw', ''),
-                        'url_small': c.get('cover_photo', {}).get('urls', {}).get('small', ''),
-                        'color': c.get('cover_photo', {}).get('color', '#ccc'),
-                    },
-                    'published_at': c.get('published_at', ''),
-                    'updated_at': c.get('updated_at', ''),
-                    'featured': i < 2,
-                }
-                for i, c in enumerate(collections)
-            ]
+            collection_data = []
+            for i, c in enumerate(collections):
+                cover = c.get('cover_photo') or {}
+                urls = cover.get('urls') or {}
+                collection_data.append(
+                    {
+                        'id': c.get('id'),
+                        'title': c.get('title'),
+                        'description': c.get('description', ''),
+                        'total_photos': c.get('total_photos', 0),
+                        'cover_photo': {
+                            'url': urls.get('regular', ''),
+                            'url_raw': urls.get('raw', ''),
+                            'url_small': urls.get('small', ''),
+                            'color': cover.get('color', '#ccc'),
+                        },
+                        'published_at': c.get('published_at', ''),
+                        'updated_at': c.get('updated_at', ''),
+                        'featured': i < 2,
+                    }
+                )
             return collection_data
         except Exception as e:
             logger.error(f'Error fetching collections: {e}', exc_info=True)

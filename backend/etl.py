@@ -22,6 +22,7 @@ from backend.database import (
 )
 from backend.providers.base import BaseProvider
 from backend.providers.unsplash import UnsplashProvider
+from config import DEFAULT_USER_NAME
 from services.unsplash import UnsplashClient
 
 # Setup logging
@@ -48,11 +49,13 @@ def transform_photo(photo: dict) -> dict:
     views = photo.get('views')
     downloads = photo.get('downloads')
     if views is None:
-        stats = photo.get('statistics', {})
-        views = stats.get('views', {}).get('total', 0) if stats else 0
+        stats = photo.get('statistics') or {}
+        views_data = stats.get('views') or {}
+        views = views_data.get('total', 0) if views_data else 0
     if downloads is None:
-        stats = photo.get('statistics', {})
-        downloads = stats.get('downloads', {}).get('total', 0) if stats else 0
+        stats = photo.get('statistics') or {}
+        downloads_data = stats.get('downloads') or {}
+        downloads = downloads_data.get('total', 0) if downloads_data else 0
 
     # Provider may return either raw Unsplash API shape (with `urls` dict)
     # or a flattened canonical shape (with `url_regular`, `url_raw`, ...).
@@ -66,10 +69,10 @@ def transform_photo(photo: dict) -> dict:
         return urls.get(field, '')
 
     # Extract location, EXIF, user, and tags
-    location = photo.get('location', {}) or {}
-    exif = photo.get('exif', {}) or {}
-    user = photo.get('user', {}) or {}
-    tags = [tag.get('title', '') for tag in photo.get('tags', []) if tag.get('title')]
+    location = photo.get('location') or {}
+    exif = photo.get('exif') or {}
+    user = photo.get('user') or {}
+    tags = [tag.get('title', '') for tag in (photo.get('tags') or []) if tag and tag.get('title')]
 
     transformed = {
         'id': photo['id'],
@@ -90,7 +93,7 @@ def transform_photo(photo: dict) -> dict:
         'url_regular': photo.get('url_regular') or _url('regular'),
         'url_small': photo.get('url_small') or _url('small'),
         'url_thumb': photo.get('url_thumb') or _url('thumb'),
-        'photographer_name': user.get('name', 'Unknown'),
+        'photographer_name': user.get('name') or DEFAULT_USER_NAME,
         'photographer_username': user.get('username', ''),
         'photographer_url': f'https://unsplash.com/@{user.get("username", "")}'
         if user.get('username')
@@ -100,8 +103,8 @@ def transform_photo(photo: dict) -> dict:
         'location_name': location.get('name'),
         'location_city': location.get('city'),
         'location_country': location.get('country'),
-        'location_latitude': location.get('position', {}).get('latitude'),
-        'location_longitude': location.get('position', {}).get('longitude'),
+        'location_latitude': (location.get('position') or {}).get('latitude'),
+        'location_longitude': (location.get('position') or {}).get('longitude'),
         'exif_make': exif.get('make'),
         'exif_model': exif.get('model'),
         'exif_exposure_time': exif.get('exposure_time'),
@@ -109,8 +112,8 @@ def transform_photo(photo: dict) -> dict:
         'exif_focal_length': exif.get('focal_length'),
         'exif_iso': str(exif.get('iso')) if exif.get('iso') else None,
         'tags': tags,
-        'unsplash_url': photo.get('links', {}).get('html', ''),
-        'download_location': photo.get('links', {}).get('download_location', ''),
+        'unsplash_url': (photo.get('links') or {}).get('html', ''),
+        'download_location': (photo.get('links') or {}).get('download_location', ''),
         'last_synced_at': datetime.now(timezone.utc).isoformat(),
     }
 
@@ -158,7 +161,7 @@ def _process_user_photos(
                 getattr(provider, 'client', None)
                 and getattr(provider.client, 'fetch_mode', None) == 'details'
             ):
-                provider.client.enrich_photo_with_details(photo)
+                provider.client.enrich_photo_with_details(photo, force_enrich=full_load)
 
             # Transform and insert
             photo_data = transform_photo(photo)
@@ -171,7 +174,7 @@ def _process_user_photos(
                     f'  Processed {idx} user photos (synced: {total_synced}, skipped: {total_skipped})'
                 )
         except Exception as e:
-            logger.error(f'Error syncing user photo {photo.get("id")}: {e}')
+            logger.error(f'Error syncing user photo {photo.get("id")}: {e}', exc_info=True)
 
     conn.commit()
     logger.info(f'Committed user photos (synced: {total_synced}, skipped: {total_skipped})')
@@ -246,7 +249,7 @@ def _process_collections(
                             getattr(provider, 'client', None)
                             and getattr(provider.client, 'fetch_mode', None) == 'details'
                         ):
-                            provider.client.enrich_photo_with_details(photo)
+                            provider.client.enrich_photo_with_details(photo, force_enrich=full_load)
 
                         photo_data = transform_photo(photo)
                         insert_photo(conn, photo_data)
