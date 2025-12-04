@@ -64,8 +64,8 @@ def _create_attribution():
 
 def distribute_to_columns(photos, num_columns=3):
     """
-    Distribute photos to columns using height-aware algorithm.
-    Always appends to the shortest column for balanced layout.
+    Distribute photos to columns filling horizontally (row by row).
+    This ensures photos appear in order across rows rather than down columns.
 
     Args:
         photos: List of photo dicts with width/height
@@ -75,38 +75,25 @@ def distribute_to_columns(photos, num_columns=3):
         List of lists, where each inner list is a column of photos
     """
     columns = [[] for _ in range(num_columns)]
-    column_heights = [0.0] * num_columns
 
-    for photo in photos:
-        # Calculate aspect ratio (height in relative units)
-        width = photo.get('width', 1)
-        height = photo.get('height', 1)
-        aspect_ratio = width / height if height > 0 else 1
-
-        # Height in relative units (assuming width=1)
-        photo_height = 1.0 / aspect_ratio if aspect_ratio > 0 else 1.0
-
-        # Find shortest column
-        shortest_idx = column_heights.index(min(column_heights))
-
-        # Add photo to shortest column
-        columns[shortest_idx].append(photo)
-        column_heights[shortest_idx] += photo_height
+    # Fill row by row: photo 0,1,2 go to cols 0,1,2; photo 3,4,5 go to cols 0,1,2; etc.
+    for idx, photo in enumerate(photos):
+        col_idx = idx % num_columns
+        columns[col_idx].append(photo)
 
     return columns
 
 
-def create_photo_item(photo, index=0, layout='gallery'):
+def create_photo_item(photo, index=0):
     """
-    Create a unified photo item that works for both gallery and grid layouts.
+    Create a photo item for the masonry grid layout.
 
     Args:
         photo: Photo dict with all photo data
         index: Photo index for animations and data-index
-        layout: 'gallery' for collection pages, 'grid' for homepage masonry
 
     Returns:
-        Div element with appropriate structure for the layout
+        Div element with photo structure
     """
     # Calculate dimensions and orientation
     width = photo.get('width', 1)
@@ -166,37 +153,32 @@ def create_photo_item(photo, index=0, layout='gallery'):
         'data-lightbox-url': photo.get('url_raw', photo.get('url_regular', photo.get('url', ''))),
     }
 
-    # Image source and layout-specific styling
+    # Image source
     img_src = photo.get('url_regular', photo['url'])
-    is_gallery = layout == 'gallery'
+    img_loading = 'lazy' if index > 8 else 'eager'
+    css_class = 'photo-card gallery-item'
 
-    if is_gallery:
-        img_loading = 'lazy'
-        css_class = 'gallery-item'
-        style = f'aspect-ratio: {aspect_ratio:.3f};'
-        img_style = None
-    else:
-        img_loading = 'lazy' if index > 8 else 'eager'
-        css_class = 'photo-card gallery-item'
-        style = f"""
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-            border-radius: 8px;
-            background: #1a1a1a;
-            opacity: 0;
-            animation: fadeInScale 0.5s ease-out forwards;
-            animation-delay: {min(index * 0.05, 1)}s;
-            cursor: pointer;
-            aspect-ratio: {aspect_ratio:.3f};
-        """
-        img_style = """
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        """
+    # Grid layout styling with animation
+    style = f"""
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #1a1a1a;
+        opacity: 0;
+        animation: fadeInScale 0.5s ease-out forwards;
+        animation-delay: {min(index * 0.05, 1)}s;
+        cursor: pointer;
+        aspect-ratio: {aspect_ratio:.3f};
+    """
+
+    img_style = """
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    """
 
     # Build photo image
     img = Img(
@@ -238,7 +220,6 @@ def create_photo_item(photo, index=0, layout='gallery'):
 
 def create_photo_container(
     photos,
-    layout='gallery',
     title=None,
     show_filters=False,
     show_search=False,
@@ -247,11 +228,10 @@ def create_photo_container(
     search_query='',
 ):
     """
-    Create a unified photo container that works for both gallery and grid layouts.
+    Create a unified photo container with masonry grid layout.
 
     Args:
         photos: List of photo dicts
-        layout: 'gallery' for collection pages, 'grid' for homepage masonry
         title: Optional section title (e.g., 'PORTFOLIO')
         show_filters: Whether to show filter controls
         show_search: Whether to show search bar
@@ -262,98 +242,81 @@ def create_photo_container(
     Returns:
         Div element with complete photo container structure
     """
-    photo_items = []
+    # Distribute photos to 3 columns filling horizontally (row by row)
+    columns = distribute_to_columns(photos, num_columns=3)
 
-    if photos:
-        for i, photo in enumerate(photos):
-            photo_items.append(create_photo_item(photo, index=i, layout=layout))
-    else:
-        photo_items.append(
-            Div(P('No photos found. Please check your Unsplash configuration.'), cls='text-center')
-        )
+    # Create column divs
+    column_divs = []
+    for col_idx, column_photos in enumerate(columns):
+        column_items = []
+        for photo in column_photos:
+            # Find original index for animation timing
+            original_idx = photos.index(photo)
+            column_items.append(create_photo_item(photo, index=original_idx))
 
-    # Build container based on layout
-    if layout == 'gallery':
-        # Gallery layout for collection pages
-        return Div(
-            H2(title, cls='section-title') if title else None,
-            create_filters(photos) if show_filters else None,
-            Div(*photo_items, cls='gallery-grid', id='gallery-grid'),
-            cls='gallery',
-            id='gallery',
-        )
-    else:
-        # Grid layout for homepage - use explicit columns
-        # Distribute photos to 3 columns using height-aware algorithm
-        columns = distribute_to_columns(photos, num_columns=3)
-
-        # Create column divs
-        column_divs = []
-        for col_idx, column_photos in enumerate(columns):
-            column_items = []
-            for photo in column_photos:
-                # Find original index for animation timing
-                original_idx = photos.index(photo)
-                column_items.append(create_photo_item(photo, index=original_idx, layout='grid'))
-
-            column_divs.append(
-                Div(
-                    *column_items,
-                    cls='masonry-column',
-                    id=f'col-{col_idx}',
-                    style="""
-                        flex: 1;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 1.5rem;
-                    """,
-                )
-            )
-
-        return Div(
-            # Search bar (if enabled)
-            create_search_bar(current_order=current_order, search_query=search_query)
-            if show_search
-            else None,
-            # Results count
+        column_divs.append(
             Div(
-                Span(
-                    f'{len(photos)} photos',
-                    id='results-count',
-                    style='color: var(--text-secondary); font-size: 0.9rem;',
-                ),
-                style='margin-bottom: 1.5rem;',
-            )
-            if show_count
-            else None,
-            # Masonry grid with explicit columns
-            Div(
-                *column_divs,
-                cls='photo-grid',
+                *column_items,
+                cls='masonry-column',
+                id=f'col-{col_idx}',
                 style="""
+                    flex: 1;
                     display: flex;
-                    flex-direction: row;
+                    flex-direction: column;
                     gap: 1.5rem;
                 """,
-            ),
-            # Loading indicator for infinite scroll
-            Div(
-                Div(
-                    style="""
-                        width: 40px;
-                        height: 40px;
-                        border: 3px solid rgba(255, 255, 255, 0.1);
-                        border-top-color: var(--text-primary);
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                    """
-                ),
-                id='loading-indicator',
-                style="""
-                    display: none;
-                    justify-content: center;
-                    padding: 3rem 0;
-                """,
-            ),
-            cls='photo-grid-container',
+            )
         )
+
+    # Build and return the container
+    return Div(
+        # Title (if provided)
+        H2(title, cls='section-title') if title else None,
+        # Filters (if enabled)
+        create_filters(photos) if show_filters else None,
+        # Search bar (if enabled)
+        create_search_bar(current_order=current_order, search_query=search_query)
+        if show_search
+        else None,
+        # Results count
+        Div(
+            Span(
+                f'{len(photos)} photos',
+                id='results-count',
+                style='color: var(--text-secondary); font-size: 0.9rem;',
+            ),
+            style='margin-bottom: 1.5rem;',
+        )
+        if show_count
+        else None,
+        # Masonry grid with explicit columns
+        Div(
+            *column_divs,
+            cls='photo-grid',
+            style="""
+                display: flex;
+                flex-direction: row;
+                gap: 1.5rem;
+            """,
+        ),
+        # Loading indicator for infinite scroll
+        Div(
+            Div(
+                style="""
+                    width: 40px;
+                    height: 40px;
+                    border: 3px solid rgba(255, 255, 255, 0.1);
+                    border-top-color: var(--text-primary);
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                """
+            ),
+            id='loading-indicator',
+            style="""
+                display: none;
+                justify-content: center;
+                padding: 3rem 0;
+            """,
+        ),
+        cls='photo-grid-container',
+    )

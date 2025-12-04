@@ -7,7 +7,7 @@ from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_navbar
 from components.ui.lightbox import create_lightbox
-from components.ui.photo_card import create_photo_item
+from components.ui.photo_card import create_photo_container
 
 
 def collection_detail_page(collection_id: str, page: int = 1, search_query: str = ''):
@@ -66,13 +66,10 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
         )
 
     # Fetch photos for this collection with search support
+    # Sort by date taken (created_at) to show collection as a timeline
     photos, has_more = search_photos(
-        query=search_query, page=page, per_page=30, order_by='latest', collection_id=collection_id
+        query=search_query, page=page, per_page=30, order_by='oldest', collection_id=collection_id
     )
-
-    gallery_items = [
-        create_photo_item(photo, i, layout='gallery') for i, photo in enumerate(photos)
-    ]
 
     return Html(
         create_head(
@@ -130,7 +127,10 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
             Main(
                 Section(
                     Div(
-                        Div(*gallery_items, cls='gallery-grid', id='gallery-grid'),
+                        create_photo_container(
+                            photos,
+                            show_count=False,
+                        ),
                         # Load more link (for pagination)
                         Div(
                             A(

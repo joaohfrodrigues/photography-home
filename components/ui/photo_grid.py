@@ -16,7 +16,6 @@ def create_photo_grid(photos, show_search=True, current_order='popular', search_
     """
     return create_photo_container(
         photos,
-        layout='grid',
         title=None,
         show_filters=False,
         show_search=show_search,
