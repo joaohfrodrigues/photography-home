@@ -365,32 +365,6 @@ def home_page(
                             current_order=order,
                             search_query=search_query,
                         ),
-                        # Load more button for pagination
-                        Div(
-                            A(
-                                'Load More Photos →',
-                                href=f'/?order={order}&page={current_page + 1}'
-                                + (f'&q={search_query}' if search_query else ''),
-                                cls='load-more-btn',
-                                style="""
-                                    display: block;
-                                    margin: 3rem auto;
-                                    padding: 1rem 2.5rem;
-                                    background: rgba(255, 255, 255, 0.05);
-                                    border: 1px solid rgba(255, 255, 255, 0.15);
-                                    border-radius: 8px;
-                                    color: var(--text-primary);
-                                    font-size: 1rem;
-                                    text-decoration: none;
-                                    text-align: center;
-                                    transition: all 0.3s ease;
-                                """,
-                                onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.25)'",
-                                onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.15)'",
-                            ),
-                            id='load-more-container',
-                            style='text-align: center;' if has_more else 'display: none;',
-                        ),
                         cls='container',
                         style='max-width: 1800px; margin: 0 auto; padding: 4rem 2rem;',
                     ),

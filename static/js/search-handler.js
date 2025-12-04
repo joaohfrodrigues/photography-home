@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.initLightbox();
             }
 
-            // Reinitialize infinite scroll if available
+            // Reset infinite scroll flag and reinitialize
+            window.__infiniteScrollInitialized = false;
             if (window.initInfiniteScroll) {
                 window.initInfiniteScroll();
             }
