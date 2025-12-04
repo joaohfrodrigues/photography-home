@@ -365,6 +365,19 @@ def home_page(
                             current_order=order,
                             search_query=search_query,
                         ),
+                        # Load-more container for infinite scroll (hidden but accessible to observer)
+                        Div(
+                            A(
+                                href=f'/?order={order}&page={current_page + 1}'
+                                + (f'&q={search_query}' if search_query else ''),
+                            ),
+                            id='load-more-container',
+                            style='position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0);'
+                            if has_more
+                            else 'display: none;',
+                        )
+                        if has_more
+                        else Div(id='load-more-container', style='display: none;'),
                         cls='container',
                         style='max-width: 1800px; margin: 0 auto; padding: 4rem 2rem;',
                     ),
