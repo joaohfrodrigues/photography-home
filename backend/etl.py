@@ -156,10 +156,9 @@ def _process_user_photos(
                     idx += 1
                     continue
 
-            # Enrich with details only if we're actually syncing this photo
-            if (
-                getattr(provider, 'client', None)
-                and getattr(provider.client, 'fetch_mode', None) == 'details'
+            # Enrich EXIF/location when missing (function short-circuits if already present)
+            if getattr(provider, 'client', None) and hasattr(
+                provider.client, 'enrich_photo_with_details'
             ):
                 provider.client.enrich_photo_with_details(photo, force_enrich=full_load)
 
@@ -244,10 +243,9 @@ def _process_collections(
                                 collection_photo_count += 1
                                 continue
 
-                        # Enrich only when syncing
-                        if (
-                            getattr(provider, 'client', None)
-                            and getattr(provider.client, 'fetch_mode', None) == 'details'
+                        # Enrich EXIF/location when missing (function short-circuits if already present)
+                        if getattr(provider, 'client', None) and hasattr(
+                            provider.client, 'enrich_photo_with_details'
                         ):
                             provider.client.enrich_photo_with_details(photo, force_enrich=full_load)
 

@@ -277,36 +277,40 @@ function fetchPhotoDetails(photoId) {
 
     fetch(`/api/photo-details/${photoId}`)
         .then(response => response.json())
-        .then(exif => {
+        .then(photoData => {
             hideLoading();
-            if (exif && !exif.error) {
-                // Update camera info with fetched EXIF data
-                const cameraMake = exif.make || 'Unknown';
-                const cameraModel = exif.model || 'Unknown';
-                const cameraFull =
-                    cameraMake !== 'Unknown' ? `${cameraMake} ${cameraModel}` : 'Unknown';
 
-                cameraValue.textContent = cameraFull;
-                exposureValue.textContent = exif.exposure_time || 'N/A';
-                apertureValue.textContent = exif.aperture ? `f/${exif.aperture}` : 'N/A';
-                focalValue.textContent =
-                    exif.focal_length && exif.focal_length !== 'N/A'
-                        ? `${exif.focal_length}mm`
-                        : 'N/A';
-                isoValue.textContent = exif.iso || 'N/A';
+            if (photoData && !photoData.error) {
+                // Use pre-formatted EXIF data from API
+                const cameraMake = photoData.camera || 'Unknown';
+                const exposureVal = photoData.exposure || 'N/A';
+                const apertureVal = photoData.aperture || 'N/A';
+                const focalVal = photoData.focal || 'N/A';
+                const isoVal = photoData.iso || 'N/A';
 
-                console.log('EXIF data loaded:', exif);
+                cameraValue.textContent = cameraMake;
+                exposureValue.textContent = exposureVal;
+                apertureValue.textContent = apertureVal;
+                focalValue.textContent = focalVal;
+                isoValue.textContent = isoVal;
+
+                console.log('EXIF data loaded from API:', {
+                    camera: cameraMake,
+                    exposure: exposureVal,
+                    aperture: apertureVal,
+                    focal: focalVal,
+                    iso: isoVal,
+                });
 
                 // Update visibility after loading EXIF
                 cameraItem.style.display =
-                    cameraFull === 'N/A' || cameraFull === 'Unknown' ? 'none' : 'flex';
+                    cameraMake === 'N/A' || cameraMake === 'Unknown' ? 'none' : 'flex';
                 exposureItem.style.display =
-                    exif.exposure_time === 'N/A' || !exif.exposure_time ? 'none' : 'flex';
+                    exposureVal === 'N/A' || !exposureVal ? 'none' : 'flex';
                 apertureItem.style.display =
-                    !exif.aperture || exif.aperture === 'N/A' ? 'none' : 'flex';
-                focalItem.style.display =
-                    !exif.focal_length || exif.focal_length === 'N/A' ? 'none' : 'flex';
-                isoItem.style.display = !exif.iso || exif.iso === 'N/A' ? 'none' : 'flex';
+                    apertureVal === 'N/A' || !apertureVal ? 'none' : 'flex';
+                focalItem.style.display = focalVal === 'N/A' || !focalVal ? 'none' : 'flex';
+                isoItem.style.display = isoVal === 'N/A' || !isoVal ? 'none' : 'flex';
 
                 // Hide entire camera section if all items are N/A
                 const allNA = [cameraItem, exposureItem, apertureItem, focalItem, isoItem].every(
@@ -327,7 +331,6 @@ function fetchPhotoDetails(photoId) {
             cameraSection.style.display = 'none';
         });
 }
-
 function closeLightbox() {
     const lightbox = document.getElementById('lightbox');
     lightbox.classList.remove('active');
