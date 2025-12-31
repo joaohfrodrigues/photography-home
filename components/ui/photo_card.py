@@ -295,7 +295,6 @@ def create_photo_container(
             cls='photo-grid',
             style="""
                 display: flex;
-                flex-direction: row;
                 gap: 1.5rem;
             """,
         ),
