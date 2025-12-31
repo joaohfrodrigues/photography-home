@@ -4,7 +4,6 @@ console.log('🎬 Lightbox.js file loaded successfully!');
 let currentPhotoIndex = 0;
 let photos = [];
 let allGalleryItems = []; // Keep reference to all items for filtering
-let lightboxSwipeDetach = null; // holds detach function for swipe handler
 
 // Loading state helpers
 function showLoading() {
@@ -232,28 +231,6 @@ function openLightbox(index) {
     if (photo.downloadLocation && photo.photoId) {
         triggerDownload(photo.downloadLocation, photo.photoId);
     }
-
-    // Attach generic swipe handler if available (from static/js/swipe.js)
-    if (typeof attachSwipe === 'function') {
-        // Detach previous if somehow still set
-        if (typeof lightboxSwipeDetach === 'function') {
-            try {
-                lightboxSwipeDetach();
-            } catch (err) {
-                console.warn('Error detaching previous swipe handler:', err);
-            }
-            lightboxSwipeDetach = null;
-        }
-
-        lightboxSwipeDetach = attachSwipe(lightbox, {
-            threshold: 50,
-            verticalThreshold: 100,
-            // Refined ignore list: only buttons and links
-            ignoreSelector: 'button, a, .lightbox-nav, .lightbox-close',
-            onSwipeLeft: () => navigateLightbox(1),
-            onSwipeRight: () => navigateLightbox(-1),
-        });
-    }
 }
 
 function fetchPhotoDetails(photoId) {
@@ -335,15 +312,6 @@ function closeLightbox() {
     const lightbox = document.getElementById('lightbox');
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
-    // Detach swipe handler when closing
-    if (typeof lightboxSwipeDetach === 'function') {
-        try {
-            lightboxSwipeDetach();
-        } catch (err) {
-            console.warn('Error detaching swipe handler on close:', err);
-        }
-        lightboxSwipeDetach = null;
-    }
 }
 
 function navigateLightbox(direction) {

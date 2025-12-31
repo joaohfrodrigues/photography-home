@@ -10,10 +10,9 @@
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(10px);
-    /* 1. Essential for swipe to work on the container */
-    touch-action: none; /* Disable browser handling (scrolling) on the lightbox overlay */
-    /* 2. Ensure it captures clicks */
-    pointer-events: auto;
+    /* Keep overlay fixed; inner content handles scrolling */
+    touch-action: pan-y pinch-zoom;
+    overflow: hidden;
 }
 
 /* Ensure the image doesn't get "dragged" instead of swiped */
@@ -38,6 +37,8 @@
     gap: 2rem;
     padding: 2rem;
     animation: slideUp 0.4s ease;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .lightbox-image-container {
@@ -166,7 +167,7 @@
 }
 
 .lightbox-close {
-    position: absolute;
+    position: fixed;
     top: 2rem;
     right: 2rem;
     width: 48px;
@@ -196,7 +197,7 @@
 }
 
 .lightbox-nav {
-    position: absolute;
+    position: fixed;
     top: 50%;
     transform: translateY(-50%);
     width: 48px;
@@ -231,4 +232,58 @@
 
 .lightbox-next {
     right: 2rem;
+}
+
+/* Keep controls visible when overlay scrolls on mobile */
+@media (max-width: 768px) {
+    .lightbox-close {
+        top: 1rem;
+        right: 1rem;
+        width: 42px;
+        height: 42px;
+    }
+
+    .lightbox-nav {
+        top: 50%;
+        width: 42px;
+        height: 42px;
+    }
+
+    .lightbox-prev {
+        left: 1rem;
+    }
+
+    .lightbox-next {
+        right: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .lightbox.active {
+        align-items: flex-start;
+        padding: 1.5rem 1rem;
+    }
+
+    .lightbox-content {
+        flex-direction: column;
+        max-height: calc(100vh - 3rem);
+        width: 100%;
+        gap: 1rem;
+        padding: 1.5rem 1rem;
+    }
+
+    .lightbox-image-container {
+        max-width: 100%;
+    }
+
+    .lightbox-image {
+        max-height: 60vh;
+    }
+
+    .lightbox-details {
+        flex: 1;
+        width: 100%;
+        max-height: none;
+        padding-right: 0;
+    }
 }
