@@ -11,7 +11,7 @@ def create_footer():
             P(
                 A(
                     'Instagram',
-                    href='https://instagram.com/joaohfrodrigues',
+                    href='https://instagram.com/__joaor__',
                     target='_blank',
                     rel='noopener noreferrer',
                 ),

@@ -7,6 +7,13 @@
     font-stretch: 75% 125%;
 }
 
+@font-face {
+    font-family: 'Merriweather';
+    src: url('/static/Merriweather-VariableFont_opsz,wdth,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-stretch: 75% 125%;
+}
+
 /* CSS Variables for theming */
 :root {
     /* Dark mode colors (default) */
@@ -73,7 +80,11 @@ h2,
 h3,
 h4,
 h5,
-h6,
+h6 {
+    font-family: 'Merriweather', serif;
+    font-weight: 400;
+}
+
 p,
 a,
 button,
@@ -81,6 +92,16 @@ input,
 select,
 textarea {
     font-family: inherit;
+}
+
+/* Link styling */
+a {
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 /* Accessibility improvements */

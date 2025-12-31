@@ -38,8 +38,8 @@ repos:
             args: [--pytest-test-first]
 
           # General
-          - id: check-added-large-files # Prevent giant files from being committed (>500KB)
-            args: [--maxkb=500]
+          - id: check-added-large-files # Prevent giant files from being committed (>10000KB)
+            args: [--maxkb=10000]
           - id: check-case-conflict # Check for files that would conflict in case-insensitive filesystems
           - id: check-merge-conflict # Check for files that contain merge conflict strings
           - id: check-symlinks # Check for symlinks which do not point to anything
