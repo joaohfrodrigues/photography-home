@@ -16,6 +16,62 @@
 
     let isLoading = false;
 
+    /**
+     * Determine the number of columns based on viewport width
+     * Matches the responsive breakpoints in responsive.css
+     */
+    function getColumnCount() {
+        const width = window.innerWidth;
+        if (width < 768) return 1; // Mobile: 1 column
+        if (width < 1200) return 2; // Tablet: 2 columns
+        return 3; // Desktop: 3 columns
+    }
+
+    /**
+     * Reorganize columns to match current viewport width
+     * This ensures columns are distributed correctly when viewport changes
+     */
+    function reorganizeColumns() {
+        const numColumns = getColumnCount();
+        const col0 = document.getElementById('col-0');
+        const col1 = document.getElementById('col-1');
+        const col2 = document.getElementById('col-2');
+
+        if (!col0) return;
+
+        // Collect all items from all columns
+        const items = [
+            ...Array.from(col0.querySelectorAll('.photo-card, .gallery-item')),
+            ...(col1 ? Array.from(col1.querySelectorAll('.photo-card, .gallery-item')) : []),
+            ...(col2 ? Array.from(col2.querySelectorAll('.photo-card, .gallery-item')) : []),
+        ];
+
+        if (items.length === 0) return;
+
+        // Clear all columns
+        col0.innerHTML = '';
+        if (col1) col1.innerHTML = '';
+        if (col2) col2.innerHTML = '';
+
+        // Get the columns we need based on current width
+        const columns = [col0, col1, col2].filter(Boolean).slice(0, numColumns);
+
+        // If we need fewer columns, hide the extras
+        for (let i = numColumns; i < 3; i++) {
+            const col = document.getElementById(`col-${i}`);
+            if (col) col.style.display = 'none';
+        }
+        for (let i = 0; i < numColumns; i++) {
+            const col = document.getElementById(`col-${i}`);
+            if (col) col.style.display = 'flex';
+        }
+
+        // Redistribute items round-robin to the active columns
+        items.forEach((item, idx) => {
+            columns[idx % numColumns].appendChild(item);
+        });
+    }
+
     function findLoadMoreAnchor() {
         const container = document.getElementById('load-more-container');
         if (!container) return null;
@@ -65,28 +121,39 @@
                 const photoGrid = document.querySelector('.photo-grid');
 
                 if (photoGrid && newPhotoGrid) {
+                    // Check if we're on mobile (< 768px) or desktop
+
                     // If server uses columns (col-0..col-2), extract items and append round-robin
                     const columns = [
                         document.getElementById('col-0'),
                         document.getElementById('col-1'),
                         document.getElementById('col-2'),
                     ].filter(Boolean);
+
                     if (columns.length === 3) {
                         // Get items from newPhotoGrid
                         const items = Array.from(
                             newPhotoGrid.querySelectorAll('.photo-card, .gallery-item')
                         );
+
+                        // Get the number of columns for current viewport
+                        const numColumns = getColumnCount();
+
+                        // Distribute round-robin across active columns only
                         let idx = 0;
                         items.forEach(item => {
-                            // Adopt node into current document
                             const node = document.importNode(item, true);
-                            columns[idx % 3].appendChild(node);
+                            // Remove animation delays from dynamically loaded items
+                            node.style.animationDelay = '0s';
+                            columns[idx % numColumns].appendChild(node);
                             idx++;
                         });
                     } else {
                         // Fallback: append children directly
                         Array.from(newPhotoGrid.children).forEach(child => {
-                            photoGrid.appendChild(child);
+                            const node = document.importNode(child, true);
+                            node.style.animationDelay = '0s';
+                            photoGrid.appendChild(node);
                         });
                     }
                 }
@@ -159,8 +226,12 @@
 
     // Auto-init on DOM ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initInfiniteScroll);
+        document.addEventListener('DOMContentLoaded', () => {
+            reorganizeColumns();
+            initInfiniteScroll();
+        });
     } else {
+        reorganizeColumns();
         initInfiniteScroll();
     }
 })();

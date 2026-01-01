@@ -15,6 +15,11 @@ from components.pages.home import home_page
 logger = logging.getLogger(__name__)
 
 
+def ft_to_html(component):
+    """Convert FastHTML component tuple to HTML string"""
+    return str(component)
+
+
 def register_page_routes(rt, app):
     """Register all page routes"""
 
@@ -88,49 +93,52 @@ def register_page_routes(rt, app):
 </urlset>"""
         return Response(content=sitemap, media_type='application/xml')
 
+    @rt('/{path:path}.map')
+    def get(path: str):
+        """Handle missing source map files with 204 No Content"""
+        return Response(status_code=204)
+
     # Custom error pages
     @app.exception_handler(404)
     async def not_found(request, exc):
         """Custom 404 page"""
         logger.warning(f'404 error: {request.url.path}')
-        return HTMLResponse(
-            Html(
-                Head(
-                    Meta(charset='UTF-8'),
-                    Meta(name='viewport', content='width=device-width, initial-scale=1.0'),
-                    Title('404 - Page Not Found'),
-                    Link(rel='stylesheet', href='/static/css/styles.css'),
-                ),
-                Body(
-                    Div(
-                        H1('404', style='font-size: 6rem; margin-bottom: 1rem;'),
-                        P('Page not found', style='font-size: 1.5rem; margin-bottom: 2rem;'),
-                        A('← Back to Home', href='/', cls='btn-link'),
-                        cls='error-page',
-                    )
-                ),
-            ).render()
+        component = Html(
+            Head(
+                Meta(charset='UTF-8'),
+                Meta(name='viewport', content='width=device-width, initial-scale=1.0'),
+                Title('404 - Page Not Found'),
+                Link(rel='stylesheet', href='/static/css/styles.css'),
+            ),
+            Body(
+                Div(
+                    H1('404', style='font-size: 6rem; margin-bottom: 1rem;'),
+                    P('Page not found', style='font-size: 1.5rem; margin-bottom: 2rem;'),
+                    A('← Back to Home', href='/', cls='btn-link'),
+                    cls='error-page',
+                )
+            ),
         )
+        return HTMLResponse(ft_to_html(component), status_code=404)
 
     @app.exception_handler(500)
     async def server_error(request, exc):
         """Custom 500 page"""
         logger.error(f'500 error: {exc}')
-        return HTMLResponse(
-            Html(
-                Head(
-                    Meta(charset='UTF-8'),
-                    Meta(name='viewport', content='width=device-width, initial-scale=1.0'),
-                    Title('500 - Server Error'),
-                    Link(rel='stylesheet', href='/static/css/styles.css'),
-                ),
-                Body(
-                    Div(
-                        H1('500', style='font-size: 6rem; margin-bottom: 1rem;'),
-                        P('Something went wrong', style='font-size: 1.5rem; margin-bottom: 2rem;'),
-                        A('← Back to Home', href='/', cls='btn-link'),
-                        cls='error-page',
-                    )
-                ),
-            ).render()
+        component = Html(
+            Head(
+                Meta(charset='UTF-8'),
+                Meta(name='viewport', content='width=device-width, initial-scale=1.0'),
+                Title('500 - Server Error'),
+                Link(rel='stylesheet', href='/static/css/styles.css'),
+            ),
+            Body(
+                Div(
+                    H1('500', style='font-size: 6rem; margin-bottom: 1rem;'),
+                    P('Something went wrong', style='font-size: 1.5rem; margin-bottom: 2rem;'),
+                    A('← Back to Home', href='/', cls='btn-link'),
+                    cls='error-page',
+                )
+            ),
         )
+        return HTMLResponse(ft_to_html(component), status_code=500)
