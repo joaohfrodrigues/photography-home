@@ -5,6 +5,15 @@ let currentPhotoIndex = 0;
 let photos = [];
 let allGalleryItems = []; // Keep reference to all items for filtering
 
+// Visible items sorted by backend/render order (data-order), respecting filters
+function getVisibleItemsOrdered() {
+    return Array.from(allGalleryItems)
+        .filter(item => !item.classList.contains('hidden'))
+        .sort(
+            (a, b) => (parseInt(a.dataset.order, 10) || 0) - (parseInt(b.dataset.order, 10) || 0)
+        );
+}
+
 // Loading state helpers
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');
@@ -99,10 +108,8 @@ function resetFilters() {
 }
 
 function updateLightboxPhotos() {
-    // Get currently visible items
-    const visibleItems = Array.from(allGalleryItems).filter(item => {
-        return !item.classList.contains('hidden');
-    });
+    // Get currently visible items in row-wise order
+    const visibleItems = getVisibleItemsOrdered();
 
     console.log('Updating lightbox photos, visible items:', visibleItems.length);
 
@@ -145,6 +152,9 @@ function updateLightboxPhotos() {
     console.log('Photos array updated:', photos.length, 'photos');
 }
 
+// Expose for other scripts (e.g., infinite scroll) to refresh ordering after appends
+window.updateLightboxPhotos = updateLightboxPhotos;
+
 function initLightbox() {
     allGalleryItems = Array.from(document.querySelectorAll('.gallery-item'));
     console.log('Lightbox init: Found', allGalleryItems.length, 'gallery items');
@@ -165,8 +175,8 @@ function initLightbox() {
             }
 
             console.log('Gallery item clicked:', index);
-            // Find the index in the visible photos array
-            const visibleItems = allGalleryItems.filter(i => !i.classList.contains('hidden'));
+            // Find the index in the visible photos array using ordered list
+            const visibleItems = getVisibleItemsOrdered();
             const visibleIndex = visibleItems.indexOf(item);
             console.log('Visible index:', visibleIndex, 'of', visibleItems.length, 'visible items');
             if (visibleIndex !== -1) {

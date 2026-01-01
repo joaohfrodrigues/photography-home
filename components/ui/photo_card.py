@@ -127,6 +127,7 @@ def create_photo_item(photo, index=0):
     # Common data attributes
     data_attrs = {
         'data-index': str(index),
+        'data-order': str(index),
         'data-photo-id': photo.get('id', ''),
         'data-download-location': photo.get('links', {}).get('download_location', ''),
         'data-description': photo.get('description', ''),

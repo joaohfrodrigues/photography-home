@@ -28,8 +28,8 @@
     }
 
     /**
-     * Reorganize columns to match current viewport width
-     * This ensures columns are distributed correctly when viewport changes
+     * Reorganize columns based on data-order to preserve backend sort
+     * across different viewport column counts.
      */
     function reorganizeColumns() {
         const numColumns = getColumnCount();
@@ -39,24 +39,22 @@
 
         if (!col0) return;
 
-        // Collect all items from all columns
-        const items = [
-            ...Array.from(col0.querySelectorAll('.photo-card, .gallery-item')),
-            ...(col1 ? Array.from(col1.querySelectorAll('.photo-card, .gallery-item')) : []),
-            ...(col2 ? Array.from(col2.querySelectorAll('.photo-card, .gallery-item')) : []),
-        ];
+        // Collect all items, sort by data-order (numeric)
+        const items = Array.from(document.querySelectorAll('.photo-card, .gallery-item')).sort(
+            (a, b) => (parseInt(a.dataset.order, 10) || 0) - (parseInt(b.dataset.order, 10) || 0)
+        );
 
-        if (items.length === 0) return;
+        if (!items.length) return;
 
         // Clear all columns
         col0.innerHTML = '';
         if (col1) col1.innerHTML = '';
         if (col2) col2.innerHTML = '';
 
-        // Get the columns we need based on current width
+        // Determine active columns
         const columns = [col0, col1, col2].filter(Boolean).slice(0, numColumns);
 
-        // If we need fewer columns, hide the extras
+        // Hide extras
         for (let i = numColumns; i < 3; i++) {
             const col = document.getElementById(`col-${i}`);
             if (col) col.style.display = 'none';
@@ -66,7 +64,7 @@
             if (col) col.style.display = 'flex';
         }
 
-        // Redistribute items round-robin to the active columns
+        // Redistribute round-robin in sorted order
         items.forEach((item, idx) => {
             columns[idx % numColumns].appendChild(item);
         });
@@ -121,14 +119,22 @@
                 const photoGrid = document.querySelector('.photo-grid');
 
                 if (photoGrid && newPhotoGrid) {
-                    // Check if we're on mobile (< 768px) or desktop
-
                     // If server uses columns (col-0..col-2), extract items and append round-robin
                     const columns = [
                         document.getElementById('col-0'),
                         document.getElementById('col-1'),
                         document.getElementById('col-2'),
                     ].filter(Boolean);
+
+                    // Base order continues from current max to keep global order unique
+                    const existing = Array.from(
+                        document.querySelectorAll('.photo-card, .gallery-item')
+                    );
+                    const maxOrder = existing.reduce((max, el) => {
+                        const val = parseInt(el.dataset.order, 10);
+                        return Number.isFinite(val) ? Math.max(max, val) : max;
+                    }, -1);
+                    const baseOrder = maxOrder + 1;
 
                     if (columns.length === 3) {
                         // Get items from newPhotoGrid
@@ -143,6 +149,7 @@
                         let idx = 0;
                         items.forEach(item => {
                             const node = document.importNode(item, true);
+                            node.dataset.order = String(baseOrder + idx); // maintain global ordering
                             // Remove animation delays from dynamically loaded items
                             node.style.animationDelay = '0s';
                             columns[idx % numColumns].appendChild(node);
@@ -150,11 +157,17 @@
                         });
                     } else {
                         // Fallback: append children directly
-                        Array.from(newPhotoGrid.children).forEach(child => {
+                        Array.from(newPhotoGrid.children).forEach((child, i) => {
                             const node = document.importNode(child, true);
+                            node.dataset.order = String(baseOrder + i);
                             node.style.animationDelay = '0s';
                             photoGrid.appendChild(node);
                         });
+                    }
+
+                    // Refresh lightbox ordering after new items append
+                    if (window.updateLightboxPhotos) {
+                        window.updateLightboxPhotos();
                     }
                 }
             }
@@ -234,4 +247,16 @@
         reorganizeColumns();
         initInfiniteScroll();
     }
+
+    // Reorganize on resize (debounced) to keep order with column count changes
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            reorganizeColumns();
+            if (window.updateLightboxPhotos) {
+                window.updateLightboxPhotos();
+            }
+        }, 150);
+    });
 })();
