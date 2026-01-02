@@ -11,14 +11,14 @@ from fasthtml.common import *
 
 def create_analytics():
     """Create Vercel Web Analytics scripts for server-rendered HTML applications.
-    
+
     This function returns the necessary scripts to enable Vercel Web Analytics tracking
     on your FastHTML application. The scripts are non-intrusive and support route tracking
     automatically for single-page applications.
-    
+
     Returns:
         A tuple of Script elements to be included in the HTML body.
-    
+
     Note:
         - These scripts should be placed in the HTML body, preferably near the end
         - The analytics tracking happens automatically on page load
