@@ -1,10 +1,12 @@
-"""Footer component"""
+"""Footer component with Vercel Web Analytics"""
 
 from fasthtml.common import *
 
+from components.ui.analytics import create_analytics
+
 
 def create_footer():
-    """Create the footer section"""
+    """Create the footer section with Vercel Web Analytics"""
     return Footer(
         Div(
             P('© 2025 João Rodrigues. All rights reserved.'),
@@ -39,4 +41,6 @@ def create_footer():
             cls='loading-overlay',
             id='loading-overlay',
         ),
+        # Vercel Web Analytics
+        *create_analytics(),
     )
