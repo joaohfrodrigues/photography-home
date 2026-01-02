@@ -132,15 +132,9 @@ The ETL runs daily via GitHub Actions:
 ✅ **Full-Text Search** - FTS5 virtual table  
 ✅ **Relational Data** - Proper many-to-many for collections
 
-## API Endpoints
+## API Endpoints (implemented)
 
-All endpoints now read from the database:
-
-- `GET /api/latest-photos?order=popular&page=1` - Latest photos
-- `GET /api/collections` - All collections
-- `GET /api/collection/{id}/photos?page=1` - Photos in collection (via junction table)
 - `GET /api/photo-details/{id}` - Photo details (EXIF included)
-- `GET /api/stats` - Database statistics
 - `GET /api/trigger-download` - Compliance (uses Unsplash API)
 
 ## Query Layer (`db_service.py`)

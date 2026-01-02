@@ -10,14 +10,14 @@ optimization.
 
 - 📸 **Local Database** - SQLite database with photos synced from Unsplash via ETL pipeline
 - 🔍 **Advanced Search** - Full-text search across titles, descriptions, photographer names, tags,
-  and locations
+    and locations
 - 🏷️ **Collection Management** - Browse photos organized by collections with many-to-many
-  relationships
+    relationships
 - 🖼️ **Full-Screen Lightbox** - Immersive photo viewing with EXIF data, statistics, and keyboard
-  navigation
+    navigation
 - 📱 **Responsive Design** - Masonry grid layout that adapts to all screen sizes
 - ⚡ **Performance Optimized** - Database queries with proper indexing, resource preloading,
-  deferred scripts
+    deferred scripts
 
 ### Data Architecture
 
@@ -45,10 +45,10 @@ optimization.
 
 - 💾 **Database-Driven** - Fast queries from local SQLite instead of API calls
 - 🔄 **Automated ETL** - GitHub Actions workflow syncs data from Unsplash daily
-- 📊 **Comprehensive Testing** - Unit tests with 29/29 passing, anonymized test fixtures
+- 📊 **Comprehensive Testing** - Pytest suite with anonymized fixtures
 - 🎭 **Strategic EXIF Fetching** - Only fetch detailed metadata for featured photos (2 per sync)
 - ✅ **Unsplash Compliance** - Full API guideline adherence (attribution, download tracking)
-- 🎯 **CI/CD Pipeline** - Automated linting, testing, security checks, and type checking
+- 🎯 **CI/CD Pipeline** - Pre-commit linting, pytest, and pip-audit security check
 
 ## 🚀 Quick Start
 
@@ -65,7 +65,8 @@ optimization.
 ```bash
 git clone https://github.com/joaohfrodrigues/photography-home.git
 cd photography-home
-pip install -r requirements.txt
+pip install .          # runtime deps
+pip install '.[dev]'   # add lint/test tools
 ```
 
 1. **Set up environment variables:**
@@ -134,7 +135,7 @@ The ETL optimizes API usage:
 
 ### Automated Sync
 
-GitHub Actions workflow (`.github/workflows/sync-photos.yml`) runs daily to:
+GitHub Actions workflow (`.github/workflows/etl.yaml`) runs daily to:
 
 - Sync new photos from Unsplash
 - Update statistics for existing photos
@@ -144,31 +145,6 @@ GitHub Actions workflow (`.github/workflows/sync-photos.yml`) runs daily to:
 See `backend/README.md` for detailed ETL documentation.
 
 ## 🌐 Deploy to Vercel
-
-The database file (`data/photos.db`) is committed to the repository, so deployment is
-straightforward:
-
-### Option 1: Using Vercel CLI
-
-1. **Install Vercel CLI:**
-
-```bash
-npm i -g vercel
-```
-
-1. **Deploy:**
-
-```bash
-vercel
-```
-
-1. **Add environment variables:**
-
-    In the Vercel dashboard, go to your project → Settings → Environment Variables and add:
-    - `UNSPLASH_ACCESS_KEY` (for download tracking)
-    - `UNSPLASH_USERNAME` (optional, for ETL)
-
-### Option 2: Using GitHub + Vercel
 
 1. Push your code to GitHub
 2. Go to [Vercel](https://vercel.com) and import your repository
@@ -231,7 +207,7 @@ Modify `static/css/gallery.css`:
 ### Additional Guides
 
 - **[data/README.md](./data/README.md)** - Database file information
-- **[.github/workflows/dev.yaml](./.github/workflows/dev.yaml)** - CI/CD pipeline configuration
+- **[.github/workflows/dev.yaml](./.github/workflows/dev.yaml)** - CI pipeline (pre-commit, pytest, pip-audit)
 
 ## 📁 Project Structure
 
@@ -275,7 +251,6 @@ The site is optimized for speed and user experience:
 - **FTS5 Search:** Full-text search with proper indexing
 - **Resource Hints:** DNS prefetch, preconnect, and preload for critical assets
 - **Deferred Loading:** JavaScript loaded with `defer` attribute
-- **Debounced Search:** 300ms delay prevents excessive filtering during typing
 - **Loading States:** Visual feedback during async operations
 - **Optimized Images:** Unsplash CDN with automatic format detection and resizing
 
@@ -303,13 +278,8 @@ The site includes comprehensive SEO optimization:
 
 ## 🧪 Testing
 
-The project includes comprehensive test coverage:
-
-- **29/29 tests passing** - 100% success rate
-- **Database tests** - Schema validation, FTS indexing
-- **Service layer tests** - Query functions, data transformation
-- **ETL tests** - Photo transformation with real API data structure
-- **Anonymized fixtures** - Test data with privacy protection
+The project includes a pytest suite covering database schema, service layer queries, ETL transforms,
+ and anonymized fixtures.
 
 Run tests:
 
@@ -322,11 +292,11 @@ pytest tests/test_etl_transform.py -v  # ETL tests only
 
 - **Environment Variables:** API keys stored in `.env` (not committed)
 - **Input Sanitization:** All user inputs sanitized
-- **Bandit Security Checks:** Automated security scanning in CI/CD
 - **Dependency Updates:** Dependabot for automated security updates
 - **No Secrets in Code:** All sensitive data in environment variables
+- **pip-audit:** Dependency vulnerability scan in CI
 
-## 🚀 Next Steps
+## 🚀 Replication steps
 
 1. **Customize Your Portfolio**
     - Update `components/ui/header.py` with your name
