@@ -278,8 +278,7 @@ The site includes comprehensive SEO optimization:
 
 ## 🧪 Testing
 
-The project includes a pytest suite covering database schema, service layer queries, ETL transforms,
- and anonymized fixtures.
+The project includes a pytest suite covering database schema, service layer queries, ETL transforms, and anonymized fixtures.
 
 Run tests:
 
