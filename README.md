@@ -4,6 +4,8 @@ A professional photography portfolio website built with FastHTML, featuring a lo
 synchronized with Unsplash API, advanced filtering, responsive design, and comprehensive SEO
 optimization.
 
+Implemented with vibe coding on VSCode and Copilot, alongside inputs from Gemini as well.
+
 ## ✨ Features
 
 ### Core Functionality
@@ -320,9 +322,3 @@ pytest tests/test_etl_transform.py -v  # ETL tests only
 ## 📝 License
 
 MIT License - feel free to use this for your own photography portfolio!
-
-## 🙏 Acknowledgments
-
-- **[FastHTML](https://fastht.ml/)** - Amazing Python web framework
-- **[Unsplash](https://unsplash.com/)** - Beautiful free photos and robust API
-- **Unsplash Community** - Talented photographers sharing their work
