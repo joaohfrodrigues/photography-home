@@ -75,6 +75,9 @@
         });
     }
 
+    // Expose for other scripts (e.g., search handler) to reflow columns after DOM swaps
+    window.reorganizeColumns = reorganizeColumns;
+
     function findLoadMoreAnchor() {
         const container = document.getElementById('load-more-container');
         if (!container) return null;
@@ -238,6 +241,9 @@
         }
     }
 
+    // Expose manual trigger for re-init scenarios
+    window.triggerLoadMore = loadMore;
+
     function initInfiniteScroll() {
         if (state.inited) return;
         const loadMoreAnchor = findLoadMoreAnchor();
@@ -277,8 +283,18 @@
             state.abortController.abort();
             state.abortController = null;
         }
+        state.isLoading = false;
         state.inited = false;
         window.__infiniteScrollInitialized = false;
+    }
+
+    function forceReinitInfiniteScroll() {
+        cleanupInfiniteScroll();
+        state.isLoading = false;
+        state.inited = false;
+        if (window.initInfiniteScroll) {
+            initInfiniteScroll();
+        }
     }
 
     // Auto-init on DOM ready
@@ -306,4 +322,10 @@
             }
         }, 150);
     });
+
+    // Expose helpers
+    window.reorganizeColumns = reorganizeColumns;
+    window.triggerLoadMore = loadMore;
+    window.resetInfiniteScroll = cleanupInfiniteScroll;
+    window.forceReinitInfiniteScroll = forceReinitInfiniteScroll;
 })();

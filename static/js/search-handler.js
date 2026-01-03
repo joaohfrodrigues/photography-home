@@ -37,6 +37,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 photoGrid.style.pointerEvents = 'none';
             }
 
+            // Disconnect any existing infinite scroll before DOM swap
+            if (window.resetInfiniteScroll) {
+                window.resetInfiniteScroll();
+            }
+
             // Fetch the new page
             const response = await fetch(url.toString());
             const html = await response.text();
@@ -69,11 +74,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.initLightbox();
             }
 
-            // Reset infinite scroll flag and reinitialize
-            window.__infiniteScrollInitialized = false;
-            if (window.initInfiniteScroll) {
-                window.initInfiniteScroll();
-            }
+            // Re-init infinite scroll and reflow columns after new DOM is in place
+            setTimeout(() => {
+                if (window.forceReinitInfiniteScroll) {
+                    window.forceReinitInfiniteScroll();
+                } else {
+                    window.__infiniteScrollInitialized = false;
+                    if (window.initInfiniteScroll) {
+                        window.initInfiniteScroll();
+                    }
+                }
+
+                if (window.reorganizeColumns) {
+                    window.reorganizeColumns();
+                }
+
+                // If sentinel is in view (short pages), kick off one manual load
+                if (window.triggerLoadMore) {
+                    const sentinel = document.getElementById('load-more-container');
+                    if (sentinel) {
+                        const rect = sentinel.getBoundingClientRect();
+                        if (rect.top < window.innerHeight + 100) {
+                            window.triggerLoadMore();
+                        }
+                    }
+                }
+            }, 0);
 
             console.log('Search completed');
         } catch (error) {
