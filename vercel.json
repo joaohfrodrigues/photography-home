@@ -5,7 +5,8 @@
             "src": "main.py",
             "use": "@vercel/python",
             "config": {
-                "maxLambdaSize": "15mb"
+                "maxLambdaSize": "15mb",
+                "includeFiles": ["data/**"]
             }
         }
     ],
@@ -14,6 +15,5 @@
             "src": "/(.*)",
             "dest": "main.py"
         }
-    ],
-    "buildCommand": "pip install -r requirements.txt"
+    ]
 }
