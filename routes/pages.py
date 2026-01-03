@@ -29,7 +29,7 @@ def register_page_routes(rt, app):
     """Register all page routes"""
 
     @rt('/')
-    def get(order: str = 'popular', page: int = 1, q: str = ''):
+    def get_home(order: str = 'popular', page: int = 1, q: str = ''):
         """Home page with optional search, ordering, and pagination"""
         # Use search_photos which handles both search and ordering
         photos, has_more = search_photos(query=q, page=page, per_page=12, order_by=order)
@@ -39,12 +39,12 @@ def register_page_routes(rt, app):
         )
 
     @rt('/collections')
-    def get():
+    def get_collections():
         """Collections page"""
         return collections_page()
 
     @rt('/collection/{identifier}')
-    def get(identifier: str, page: int = 1, q: str = ''):
+    def get_collection_detail(identifier: str, page: int = 1, q: str = ''):
         """Collection detail; accepts slug or legacy id, redirects to slug if needed."""
         collection = get_collection_by_slug(identifier)
         if collection:
@@ -60,19 +60,23 @@ def register_page_routes(rt, app):
         return HTMLResponse(status_code=404, content='Collection not found')
 
     @rt('/about')
-    def get():
+    def get_about():
         """About page"""
         return about_page()
 
     @rt('/robots.txt')
-    def get():
+    def get_robots():
         """Serve robots.txt"""
         return FileResponse('static/robots.txt', media_type='text/plain')
 
     @rt('/sitemap.xml')
-    def get():
+    def get_sitemap():
         """Generate dynamic sitemap"""
-        collections = get_all_collections()
+        try:
+            collections = get_all_collections()
+        except Exception as e:
+            logger.error(f'Error fetching collections for sitemap: {e}')
+            collections = []
         collection_urls = '\n'.join(
             [
                 f"""    <url>
@@ -110,7 +114,7 @@ def register_page_routes(rt, app):
         return Response(content=sitemap, media_type='application/xml')
 
     @rt('/{path:path}.map')
-    def get(path: str):
+    def get_sourcemap(path: str):
         """Handle missing source map files with 204 No Content"""
         return Response(status_code=204)
 
