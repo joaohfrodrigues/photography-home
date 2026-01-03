@@ -2,7 +2,7 @@
 
 from fasthtml.common import *
 
-from backend.db_service import get_all_collections, search_photos
+from backend.db_service import get_collection_by_slug, search_photos
 from components.ui.footer import create_footer
 from components.ui.head import create_head
 from components.ui.header import create_navbar
@@ -10,17 +10,16 @@ from components.ui.lightbox import create_lightbox
 from components.ui.photo_card import create_photo_container
 
 
-def collection_detail_page(collection_id: str, page: int = 1, search_query: str = ''):
+def collection_detail_page(collection_slug: str, page: int = 1, search_query: str = ''):
     """Render a collection detail page with search and pagination support
 
     Args:
-        collection_id: Collection ID to display
+        collection_slug: Collection slug to display (e.g., '25-valencia')
         page: Page number (1-indexed)
         search_query: Optional search query to filter photos in collection
     """
-    # Get collection info
-    collections = get_all_collections()
-    collection = next((c for c in collections if c['id'] == collection_id), None)
+    # Get collection info by slug
+    collection = get_collection_by_slug(collection_slug)
 
     if not collection:
         # Collection not found
@@ -68,7 +67,11 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
     # Fetch photos for this collection with search support
     # Sort by date taken (created_at) to show collection as a timeline
     photos, has_more = search_photos(
-        query=search_query, page=page, per_page=30, order_by='oldest', collection_id=collection_id
+        query=search_query,
+        page=page,
+        per_page=30,
+        order_by='oldest',
+        collection_id=collection['id'],
     )
 
     # Get first photo for og:image
@@ -96,7 +99,7 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
                 "@type": "ListItem",
                 "position": 3,
                 "name": "{collection['title']}",
-                "item": "https://joaohfrodrigues.com/collection/{collection_id}"
+                "item": "https://joaohfrodrigues.com/collection/{collection['slug']}"
             }}
         ]
     }}
@@ -107,7 +110,7 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
             title=f'{collection["title"]} | João Rodrigues',
             description=collection['description']
             or f'Browse {collection["total_photos"]} photos from {collection["title"]}',
-            current_url=f'https://joaohfrodrigues.com/collection/{collection_id}',
+            current_url=f'https://joaohfrodrigues.com/collection/{collection["slug"]}',
             og_image=og_image,
             structured_data_override=breadcrumb_schema,
         ),
@@ -168,7 +171,7 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
                         Div(
                             A(
                                 'Load More Photos →',
-                                href=f'/collection/{collection_id}?page={page + 1}'
+                                href=f'/collection/{collection_slug}?page={page + 1}'
                                 + (f'&q={search_query}' if search_query else ''),
                                 style="""
                                     display: inline-block;

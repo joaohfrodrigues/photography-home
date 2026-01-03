@@ -6,7 +6,12 @@ from datetime import datetime
 from fasthtml.common import *
 from starlette.responses import FileResponse, HTMLResponse, Response
 
-from backend.db_service import get_all_collections, search_photos
+from backend.db_service import (
+    get_all_collections,
+    get_collection_by_id,
+    get_collection_by_slug,
+    search_photos,
+)
 from components.pages.about import about_page
 from components.pages.collection_detail import collection_detail_page
 from components.pages.collections import collections_page
@@ -38,10 +43,21 @@ def register_page_routes(rt, app):
         """Collections page"""
         return collections_page()
 
-    @rt('/collection/{collection_id}')
-    def get(collection_id: str, page: int = 1, q: str = ''):
-        """Collection detail page with optional search and pagination"""
-        return collection_detail_page(collection_id, page=page, search_query=q)
+    @rt('/collection/{identifier}')
+    def get(identifier: str, page: int = 1, q: str = ''):
+        """Collection detail; accepts slug or legacy id, redirects to slug if needed."""
+        collection = get_collection_by_slug(identifier)
+        if collection:
+            return collection_detail_page(collection['slug'], page=page, search_query=q)
+
+        collection = get_collection_by_id(identifier)
+        if collection:
+            return Response(
+                status_code=301,
+                headers={'Location': f"/collection/{collection['slug']}"},
+            )
+
+        return HTMLResponse(status_code=404, content='Collection not found')
 
     @rt('/about')
     def get():
@@ -60,7 +76,7 @@ def register_page_routes(rt, app):
         collection_urls = '\n'.join(
             [
                 f"""    <url>
-        <loc>https://joaohfrodrigues.com/collection/{c['id']}</loc>
+        <loc>https://joaohfrodrigues.com/collection/{c['slug']}</loc>
         <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>

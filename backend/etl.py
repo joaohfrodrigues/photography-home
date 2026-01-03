@@ -23,6 +23,7 @@ from backend.database import (
 from backend.providers.base import BaseProvider
 from backend.providers.unsplash import UnsplashProvider
 from config import DEFAULT_USER_NAME
+from services.slug import slugify
 from services.unsplash import UnsplashClient
 
 # Setup logging
@@ -31,6 +32,19 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger(__name__)
+
+
+def _dedupe_slug(conn, base_slug: str) -> str:
+    """Ensure slug uniqueness by appending a numeric suffix when needed."""
+    cursor = conn.cursor()
+    slug = base_slug
+    suffix = 2
+    cursor.execute('SELECT 1 FROM collections WHERE slug = ? LIMIT 1', (slug,))
+    while cursor.fetchone():
+        slug = f'{base_slug}-{suffix}'
+        suffix += 1
+        cursor.execute('SELECT 1 FROM collections WHERE slug = ? LIMIT 1', (slug,))
+    return slug
 
 
 def transform_photo(photo: dict) -> dict:
@@ -199,9 +213,13 @@ def _process_collections(
     for collection in collections_generator:
         try:
             # Insert collection metadata
+            base_slug = slugify(collection.get('title', ''))
+            collection_slug = _dedupe_slug(conn, base_slug)
+
             collection_data = {
                 'id': collection['id'],
                 'title': collection['title'],
+                'slug': collection_slug,
                 'description': collection.get('description', ''),
                 'total_photos': collection.get('total_photos', 0),
                 'published_at': collection.get('published_at'),

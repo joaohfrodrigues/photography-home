@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+from services.slug import slugify
+
 logger = logging.getLogger(__name__)
 
 # Database file location
@@ -44,6 +46,7 @@ def init_database():
             CREATE TABLE IF NOT EXISTS collections (
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
+                slug TEXT UNIQUE,
                 description TEXT,
                 total_photos INTEGER DEFAULT 0,
                 published_at TEXT,
@@ -175,11 +178,12 @@ def insert_collection(conn: sqlite3.Connection, collection_data: dict[str, Any])
     cursor.execute(
         """
         INSERT INTO collections (
-            id, title, description, total_photos, published_at, updated_at,
+            id, title, slug, description, total_photos, published_at, updated_at,
             cover_photo_id, cover_photo_url, last_synced_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             title=COALESCE(excluded.title, collections.title),
+            slug=COALESCE(excluded.slug, collections.slug),
             description=COALESCE(excluded.description, collections.description),
             total_photos=COALESCE(excluded.total_photos, collections.total_photos),
             published_at=COALESCE(excluded.published_at, collections.published_at),
@@ -191,6 +195,7 @@ def insert_collection(conn: sqlite3.Connection, collection_data: dict[str, Any])
         (
             collection_data.get('id'),
             collection_data.get('title'),
+            collection_data.get('slug') or slugify(collection_data.get('title') or ''),
             collection_data.get('description'),
             collection_data.get('total_photos', 0),
             collection_data.get('published_at'),

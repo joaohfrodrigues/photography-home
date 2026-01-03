@@ -6,6 +6,7 @@ from typing import Any
 
 from backend.database import get_db_connection
 from config import DEFAULT_USER_NAME
+from services.slug import slugify
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +171,7 @@ def get_all_collections() -> list[dict]:
             SELECT
                 c.id,
                 c.title,
+                c.slug,
                 c.description,
                 c.total_photos,
                 c.updated_at,
@@ -187,6 +189,7 @@ def get_all_collections() -> list[dict]:
                 {
                     'id': row['id'],
                     'title': row['title'],
+                    'slug': row['slug'] or slugify(row['title']),
                     'description': row['description'] or '',
                     'total_photos': row['total_photos'],
                     'updated_at': row['updated_at'],
@@ -197,6 +200,94 @@ def get_all_collections() -> list[dict]:
 
         logger.info(f'Fetched {len(collections)} collections')
         return collections
+
+
+def get_collection_by_slug(slug: str) -> dict | None:
+    """Get a collection by its slug.
+
+    Args:
+        slug: Collection slug (e.g., '25-valencia')
+
+    Returns:
+        Collection dict or None if not found
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                c.id,
+                c.title,
+                c.slug,
+                c.description,
+                c.total_photos,
+                c.updated_at,
+                c.published_at,
+                c.cover_photo_url
+            FROM collections c
+            WHERE c.slug = ? OR (c.slug IS NULL AND ? = ?)
+            LIMIT 1
+        """,
+            (slug, slugify(slug), slug),
+        )
+
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return {
+            'id': row['id'],
+            'title': row['title'],
+            'slug': row['slug'] or slugify(row['title']),
+            'description': row['description'] or '',
+            'total_photos': row['total_photos'],
+            'updated_at': row['updated_at'],
+            'published_at': row['published_at'],
+            'cover_photo': {'url': row['cover_photo_url']},
+        }
+
+
+def get_collection_by_id(collection_id: str) -> dict | None:
+    """Get a collection by its original Unsplash ID."""
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                c.id,
+                c.title,
+                c.slug,
+                c.description,
+                c.total_photos,
+                c.updated_at,
+                c.published_at,
+                c.cover_photo_url
+            FROM collections c
+            WHERE c.id = ?
+            LIMIT 1
+        """,
+            (collection_id,),
+        )
+
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return {
+            'id': row['id'],
+            'title': row['title'],
+            'slug': row['slug'] or slugify(row['title']),
+            'description': row['description'] or '',
+            'total_photos': row['total_photos'],
+            'updated_at': row['updated_at'],
+            'published_at': row['published_at'],
+            'cover_photo': {'url': row['cover_photo_url']},
+        }
 
 
 def search_photos(

@@ -98,7 +98,7 @@ def create_collection_card(collection, badges=None):
             cls='collection-info',
             style='padding: 1.75rem;',
         ),
-        href=f'/collection/{collection["id"]}',
+        href=f'/collection/{collection["slug"]}',
         cls='collection-grid-card',
         style="""
             display: block;

@@ -55,6 +55,7 @@ def create_collection_card(collection, index, badges=None):
         badges: List of badge dicts (optional)
     """
     collection_id = collection['id']
+    collection_slug = collection.get('slug', '')
     photos, _ = get_collection_photos(collection_id, page=1, per_page=6)
 
     # Create carousel items with regular quality images
@@ -221,7 +222,7 @@ def create_collection_card(collection, index, badges=None):
             ),
             style='padding: 1.25rem;',
         ),
-        href=f'/collection/{collection_id}',
+        href=f'/collection/{collection_slug}',
         cls='collection-card',
         style=f"""
             display: block;
