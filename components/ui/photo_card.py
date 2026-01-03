@@ -208,11 +208,31 @@ def create_photo_item(photo, index=0):
         cls='photo-attribution',
     )
 
-    # Return unified structure
+    # ImageObject schema for SEO (helps Google Image Search)
+    image_schema = f"""
+    {{
+        "@context": "https://schema.org",
+        "@type": "ImageObject",
+        "name": "{photo['title'].replace('"', '\\"')}",
+        "url": "{img_src}",
+        "width": {width},
+        "height": {height},
+        "description": "{(photo.get('description', '') or photo['title']).replace('"', '\\"')}",
+        "creator": {{
+            "@type": "Person",
+            "name": "{photographer_name}"
+        }},
+        "creditText": "{photographer_name} on Unsplash",
+        "datePublished": "{photo.get('created_at', '')}"
+    }}
+    """
+
+    # Return unified structure with embedded schema
     return Div(
         img,
         Div(photo['title'], cls='photo-title'),
         attribution,
+        Script(image_schema, type='application/ld+json'),
         cls=css_class,
         style=style,
         **data_attrs,

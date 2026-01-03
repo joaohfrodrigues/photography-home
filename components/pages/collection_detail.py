@@ -71,12 +71,45 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
         query=search_query, page=page, per_page=30, order_by='oldest', collection_id=collection_id
     )
 
+    # Get first photo for og:image
+    og_image = photos[0].get('url_regular', photos[0].get('url')) if photos else None
+
+    # Breadcrumb schema for SEO
+    breadcrumb_schema = f"""
+    {{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://joaohfrodrigues.com/"
+            }},
+            {{
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Collections",
+                "item": "https://joaohfrodrigues.com/collections"
+            }},
+            {{
+                "@type": "ListItem",
+                "position": 3,
+                "name": "{collection['title']}",
+                "item": "https://joaohfrodrigues.com/collection/{collection_id}"
+            }}
+        ]
+    }}
+    """
+
     return Html(
         create_head(
             title=f'{collection["title"]} | João Rodrigues',
             description=collection['description']
             or f'Browse {collection["total_photos"]} photos from {collection["title"]}',
             current_url=f'https://joaohfrodrigues.com/collection/{collection_id}',
+            og_image=og_image,
+            structured_data_override=breadcrumb_schema,
         ),
         Body(
             create_navbar(current_page='collections'),
@@ -138,8 +171,7 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
                                 href=f'/collection/{collection_id}?page={page + 1}'
                                 + (f'&q={search_query}' if search_query else ''),
                                 style="""
-                                    display: block;
-                                    margin: 3rem auto;
+                                    display: inline-block;
                                     padding: 1rem 2.5rem;
                                     background: rgba(255, 255, 255, 0.05);
                                     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -153,14 +185,13 @@ def collection_detail_page(collection_id: str, page: int = 1, search_query: str 
                                 """,
                                 onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.25)'",
                                 onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.15)'",
-                            )
-                            if has_more
-                            else None,
-                            style='text-align: center; padding: 2rem 0;',
+                            ),
                             id='load-more-container',
-                        )
-                        if has_more
-                        else None,
+                            # Keep sentinel in normal flow after the grid to avoid early triggers
+                            style='width: 100%; margin-top: 32px; text-align: center;'
+                            if has_more
+                            else 'display: none;',
+                        ),
                         cls='gallery',
                         id='gallery',
                     ),

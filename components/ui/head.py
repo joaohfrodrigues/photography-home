@@ -7,14 +7,29 @@ def create_head(
     title='João Rodrigues | Photography',
     description=None,
     current_url='https://joaohfrodrigues.com',
+    og_image=None,
+    structured_data_override=None,
 ):
-    """Create the HTML head section with SEO optimization"""
+    """Create the HTML head section with SEO optimization
+
+    Args:
+        title: Page title
+        description: Meta description
+        current_url: Canonical URL (for canonical tag)
+        og_image: Open Graph image URL for social sharing
+        structured_data_override: Custom structured data (JSON-LD) to override default
+    """
 
     if description is None:
         description = 'Professional photography portfolio by João Rodrigues. Explore stunning photographs from around the world, featuring landscapes, portraits, and travel photography.'
 
+    if og_image is None:
+        og_image = 'https://joaohfrodrigues.com/static/favicons/apple-touch-icon.png'
+
     # Structured data for SEO (JSON-LD)
-    structured_data = """
+    structured_data = (
+        structured_data_override
+        or """
     {
         "@context": "https://schema.org",
         "@type": "Person",
@@ -30,6 +45,7 @@ def create_head(
         "image": "https://joaohfrodrigues.com/static/favicons/apple-touch-icon.png"
     }
     """
+    )
 
     return Head(
         Title(title),
@@ -41,6 +57,8 @@ def create_head(
         ),
         Meta(name='author', content='João Rodrigues'),
         Meta(charset='utf-8'),
+        # Canonical URL for SEO (prevents duplicate content issues)
+        Link(rel='canonical', href=current_url),
         # CRITICAL: Theme initialization - must run before ANY CSS loads
         # Handles localStorage SecurityError gracefully (private browsing, file://, etc.)
         Script(
@@ -79,6 +97,7 @@ def create_head(
         Meta(property='og:description', content=description),
         Meta(property='og:url', content=current_url),
         Meta(property='og:site_name', content='João Rodrigues Photography'),
+        Meta(property='og:image', content=og_image),
         # Twitter Card
         Meta(name='twitter:card', content='summary_large_image'),
         Meta(name='twitter:title', content=title),

@@ -14,8 +14,12 @@
 (function () {
     'use strict';
 
-    let isLoading = false;
-    let observer;
+    const state = {
+        inited: false,
+        isLoading: false,
+        observer: null,
+        abortController: null,
+    };
 
     /**
      * Determine the number of columns based on viewport width
@@ -77,46 +81,115 @@
         return container.querySelector('a') || container.querySelector('button') || null;
     }
 
-    function getCurrentPageFromLink(link) {
-        try {
-            const url = new URL(link.href, window.location.origin);
-            return parseInt(url.searchParams.get('page') || '1', 10);
-        } catch (e) {
-            return 1;
-        }
-    }
-
     function bindAnchorClick(anchor) {
         if (!anchor) return;
-        const tag = anchor.tagName.toLowerCase();
-        if (tag !== 'a') return;
         if (anchor.dataset.infiniteBound === 'true') return;
+        if (anchor.tagName.toLowerCase() !== 'a') return;
 
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
+            if (state.isLoading) return;
             loadMore();
         });
 
         anchor.dataset.infiniteBound = 'true';
     }
 
-    function updateLoadMoreContainer(doc) {
+    function setLoading(loading, link, prevText) {
+        const spinner = document.getElementById('loading-indicator');
+        if (spinner) spinner.style.display = loading ? 'flex' : 'none';
+        if (link) link.textContent = loading ? 'Loading...' : prevText;
+    }
+
+    async function fetchNextPage(url) {
+        if (state.abortController) {
+            state.abortController.abort();
+        }
+        state.abortController = new AbortController();
+        const res = await fetch(url, { signal: state.abortController.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const html = await res.text();
+        const parser = new DOMParser();
+        return parser.parseFromString(html, 'text/html');
+    }
+
+    function appendContent(doc) {
+        const newGallery = doc.getElementById('gallery-grid');
+        const gallery = document.getElementById('gallery-grid');
+
+        if (gallery && newGallery) {
+            Array.from(newGallery.children).forEach(child => {
+                gallery.appendChild(child);
+            });
+            return;
+        }
+
+        const newPhotoGrid = doc.querySelector('.photo-grid') || doc.querySelector('.gallery-grid');
+        const photoGrid = document.querySelector('.photo-grid');
+
+        if (!photoGrid || !newPhotoGrid) return;
+
+        const columns = [
+            document.getElementById('col-0'),
+            document.getElementById('col-1'),
+            document.getElementById('col-2'),
+        ].filter(Boolean);
+
+        const existing = Array.from(document.querySelectorAll('.photo-card, .gallery-item'));
+        const maxOrder = existing.reduce((max, el) => {
+            const val = parseInt(el.dataset.order, 10);
+            return Number.isFinite(val) ? Math.max(max, val) : max;
+        }, -1);
+        const baseOrder = maxOrder + 1;
+
+        if (columns.length === 3) {
+            const items = Array.from(newPhotoGrid.querySelectorAll('.photo-card, .gallery-item'));
+            const numColumns = getColumnCount();
+            let idx = 0;
+            items.forEach(item => {
+                const node = document.importNode(item, true);
+                node.dataset.order = String(baseOrder + idx);
+                node.style.animationDelay = '0s';
+                columns[idx % numColumns].appendChild(node);
+                idx++;
+            });
+        } else {
+            Array.from(newPhotoGrid.children).forEach((child, i) => {
+                const node = document.importNode(child, true);
+                node.dataset.order = String(baseOrder + i);
+                node.style.animationDelay = '0s';
+                photoGrid.appendChild(node);
+            });
+        }
+
+        if (window.updateLightboxPhotos) {
+            window.updateLightboxPhotos();
+        }
+    }
+
+    function updateSentinel(doc) {
         const currentContainer = document.getElementById('load-more-container');
-        if (!currentContainer) return;
+        if (!currentContainer) return false;
 
         const newContainer = doc.getElementById('load-more-container');
+        const noMore =
+            !newContainer ||
+            newContainer.dataset.hasMore === 'false' ||
+            newContainer.style.display === 'none';
 
-        // No more pages – remove sentinel and disconnect observer
-        if (!newContainer || newContainer.style.display === 'none') {
-            if (observer) observer.disconnect();
+        if (noMore) {
+            if (state.observer) state.observer.disconnect();
+            state.observer = null;
+            window.__infiniteScrollObserver = null;
             currentContainer.remove();
-            return;
+            state.inited = false;
+            window.__infiniteScrollInitialized = false;
+            return false;
         }
 
         const newAnchor = newContainer.querySelector('a, button');
         let currentAnchor = currentContainer.querySelector('a, button');
 
-        // Reuse existing anchor when possible to keep listeners attached
         if (newAnchor) {
             if (!currentAnchor) {
                 currentContainer.innerHTML = '';
@@ -130,131 +203,57 @@
             currentContainer.style.display = newContainer.style.display || '';
             bindAnchorClick(currentAnchor);
         }
+
+        return true;
+    }
+
+    function refreshUi() {
+        if (window.initLightbox) window.initLightbox();
+        if (window.reapplyAnimations) window.reapplyAnimations();
+        bindAnchorClick(findLoadMoreAnchor());
     }
 
     async function loadMore() {
-        if (isLoading) return;
+        if (state.isLoading) return;
         const link = findLoadMoreAnchor();
         if (!link) return;
 
-        isLoading = true;
+        state.isLoading = true;
         const prevText = link.textContent;
-        link.textContent = 'Loading...';
+        setLoading(true, link, prevText);
 
         try {
-            const url = link.href;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const html = await res.text();
-
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            // Prefer gallery grid (collection) else photo-grid (homepage)
-            const newGallery = doc.getElementById('gallery-grid');
-            const gallery = document.getElementById('gallery-grid');
-
-            if (gallery && newGallery) {
-                // Append gallery items directly
-                Array.from(newGallery.children).forEach(child => {
-                    gallery.appendChild(child);
-                });
-            } else {
-                // Photo grid / columns
-                const newPhotoGrid =
-                    doc.querySelector('.photo-grid') || doc.querySelector('.gallery-grid');
-                const photoGrid = document.querySelector('.photo-grid');
-
-                if (photoGrid && newPhotoGrid) {
-                    // If server uses columns (col-0..col-2), extract items and append round-robin
-                    const columns = [
-                        document.getElementById('col-0'),
-                        document.getElementById('col-1'),
-                        document.getElementById('col-2'),
-                    ].filter(Boolean);
-
-                    // Base order continues from current max to keep global order unique
-                    const existing = Array.from(
-                        document.querySelectorAll('.photo-card, .gallery-item')
-                    );
-                    const maxOrder = existing.reduce((max, el) => {
-                        const val = parseInt(el.dataset.order, 10);
-                        return Number.isFinite(val) ? Math.max(max, val) : max;
-                    }, -1);
-                    const baseOrder = maxOrder + 1;
-
-                    if (columns.length === 3) {
-                        // Get items from newPhotoGrid
-                        const items = Array.from(
-                            newPhotoGrid.querySelectorAll('.photo-card, .gallery-item')
-                        );
-
-                        // Get the number of columns for current viewport
-                        const numColumns = getColumnCount();
-
-                        // Distribute round-robin across active columns only
-                        let idx = 0;
-                        items.forEach(item => {
-                            const node = document.importNode(item, true);
-                            node.dataset.order = String(baseOrder + idx); // maintain global ordering
-                            // Remove animation delays from dynamically loaded items
-                            node.style.animationDelay = '0s';
-                            columns[idx % numColumns].appendChild(node);
-                            idx++;
-                        });
-                    } else {
-                        // Fallback: append children directly
-                        Array.from(newPhotoGrid.children).forEach((child, i) => {
-                            const node = document.importNode(child, true);
-                            node.dataset.order = String(baseOrder + i);
-                            node.style.animationDelay = '0s';
-                            photoGrid.appendChild(node);
-                        });
-                    }
-
-                    // Refresh lightbox ordering after new items append
-                    if (window.updateLightboxPhotos) {
-                        window.updateLightboxPhotos();
-                    }
-                }
-            }
-
-            // Update existing load-more sentinel without recreating the observer
-            updateLoadMoreContainer(doc);
-
-            // Reinitialize lightbox and animations
-            if (window.initLightbox) window.initLightbox();
-            if (window.reapplyAnimations) window.reapplyAnimations();
-            // Rebind click handler in case the link was updated
-            bindAnchorClick(findLoadMoreAnchor());
+            const doc = await fetchNextPage(link.href);
+            appendContent(doc);
+            const hasMore = updateSentinel(doc);
+            refreshUi();
+            if (!hasMore) cleanupInfiniteScroll();
         } catch (err) {
             console.error('Infinite scroll load failed', err);
             if (link) link.textContent = 'Error - Try Again';
         } finally {
-            isLoading = false;
-            if (link) link.textContent = prevText;
+            state.isLoading = false;
+            setLoading(false, link, prevText);
+            state.abortController = null;
         }
     }
 
     function initInfiniteScroll() {
+        if (state.inited) return;
         const loadMoreAnchor = findLoadMoreAnchor();
         if (!loadMoreAnchor) return;
 
-        if (window.__infiniteScrollInitialized) return;
-        window.__infiniteScrollInitialized = true;
-
-        // If the anchor is an <a>, we observe its container for intersection
         const container = document.getElementById('load-more-container');
         if (!container) return;
 
-        // Add click fallback
-        const anchor = container.querySelector('a, button');
-        bindAnchorClick(anchor);
+        state.inited = true;
+        window.__infiniteScrollInitialized = true;
+        bindAnchorClick(loadMoreAnchor);
 
-        observer = new IntersectionObserver(
+        state.observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting && !isLoading) {
+                    if (entry.isIntersecting && !state.isLoading) {
                         loadMore();
                     }
                 });
@@ -262,10 +261,24 @@
             { rootMargin: '300px' }
         );
 
-        observer.observe(container);
+        state.observer.observe(container);
 
         window.initInfiniteScroll = initInfiniteScroll;
-        window.__infiniteScrollObserver = observer;
+        window.__infiniteScrollObserver = state.observer;
+    }
+
+    function cleanupInfiniteScroll() {
+        if (state.observer) {
+            state.observer.disconnect();
+            state.observer = null;
+            window.__infiniteScrollObserver = null;
+        }
+        if (state.abortController) {
+            state.abortController.abort();
+            state.abortController = null;
+        }
+        state.inited = false;
+        window.__infiniteScrollInitialized = false;
     }
 
     // Auto-init on DOM ready
@@ -278,6 +291,9 @@
         reorganizeColumns();
         initInfiniteScroll();
     }
+
+    window.addEventListener('pagehide', cleanupInfiniteScroll);
+    window.addEventListener('beforeunload', cleanupInfiniteScroll);
 
     // Reorganize on resize (debounced) to keep order with column count changes
     let resizeTimeout;

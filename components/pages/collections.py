@@ -129,11 +129,15 @@ def collections_page(collections=None):
     for collection in collections:
         collection['badges'] = get_collection_badges(collection, collection_stats, collections)
 
+    # Get first collection cover for og:image
+    og_image = collections[0]['cover_photo']['url'] if collections else None
+
     return Html(
         create_head(
             title='Collections | João Rodrigues',
             description='Browse my photography collections from travels and adventures around the world.',
             current_url='https://joaohfrodrigues.com/collections',
+            og_image=og_image,
         ),
         Body(
             create_navbar(current_page='collections'),

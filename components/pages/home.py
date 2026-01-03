@@ -281,8 +281,17 @@ def home_page(
             query=search_query, page=current_page, per_page=12, order_by=order
         )
 
+    # Get first photo for og:image (social sharing preview)
+    og_image = None
+    if latest_photos:
+        og_image = latest_photos[0].get('url_regular', latest_photos[0].get('url'))
+
     return Html(
-        create_head(),
+        create_head(
+            title='Featured Photos | João Rodrigues Photography',
+            description='Browse my best photography work, curated by popularity and views. Landscapes, portraits, and travel photography.',
+            og_image=og_image,
+        ),
         Body(
             create_navbar(current_page='home'),
             create_hero(),
