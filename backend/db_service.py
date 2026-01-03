@@ -126,7 +126,7 @@ def get_latest_photos(
 
 
 def get_collection_photos(
-    collection_id: str, page: int = 1, per_page: int = 30
+    collection_id: str, page: int = 1, per_page: int = 30, order_by: str = 'created'
 ) -> tuple[list[dict], bool]:
     """
     Get photos from a specific collection.
@@ -139,12 +139,16 @@ def get_collection_photos(
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
+        order_clause = (
+            'p.created_at DESC' if order_by != 'popular' else 'p.views DESC, p.created_at DESC'
+        )
+
         cursor.execute(
-            """
+            f"""
             SELECT p.* FROM photos p
             JOIN photo_collections pc ON p.id = pc.photo_id
             WHERE pc.collection_id = ?
-            ORDER BY p.created_at DESC
+            ORDER BY {order_clause}
             LIMIT ? OFFSET ?
         """,
             (collection_id, per_page + 1, offset),
@@ -176,9 +180,19 @@ def get_all_collections() -> list[dict]:
                 c.total_photos,
                 c.updated_at,
                 c.published_at,
-                c.cover_photo_url
+                COALESCE(
+                    (
+                        SELECT p.url_regular
+                        FROM photos p
+                        JOIN photo_collections pc ON pc.photo_id = p.id
+                        WHERE pc.collection_id = c.id
+                        ORDER BY p.views DESC
+                        LIMIT 1
+                    ),
+                    c.cover_photo_url
+                ) AS cover_photo_url
             FROM collections c
-            ORDER BY c.updated_at DESC
+            ORDER BY COALESCE(c.published_at, c.updated_at) DESC
         """)
 
         rows = cursor.fetchall()

@@ -56,7 +56,7 @@ def create_collection_card(collection, index, badges=None):
     """
     collection_id = collection['id']
     collection_slug = collection.get('slug', '')
-    photos, _ = get_collection_photos(collection_id, page=1, per_page=6)
+    photos, _ = get_collection_photos(collection_id, page=1, per_page=6, order_by='popular')
 
     # Create carousel items with regular quality images
     carousel_items = []

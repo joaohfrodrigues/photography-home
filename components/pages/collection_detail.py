@@ -65,12 +65,12 @@ def collection_detail_page(collection_slug: str, page: int = 1, search_query: st
         )
 
     # Fetch photos for this collection with search support
-    # Sort by date taken (created_at) to show collection as a timeline
+    # Sort by popularity (same default as homepage)
     photos, has_more = search_photos(
         query=search_query,
         page=page,
         per_page=30,
-        order_by='oldest',
+        order_by='popular',
         collection_id=collection['id'],
     )
 
