@@ -15,6 +15,7 @@
     'use strict';
 
     let isLoading = false;
+    let observer;
 
     /**
      * Determine the number of columns based on viewport width
@@ -82,6 +83,52 @@
             return parseInt(url.searchParams.get('page') || '1', 10);
         } catch (e) {
             return 1;
+        }
+    }
+
+    function bindAnchorClick(anchor) {
+        if (!anchor) return;
+        const tag = anchor.tagName.toLowerCase();
+        if (tag !== 'a') return;
+        if (anchor.dataset.infiniteBound === 'true') return;
+
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            loadMore();
+        });
+
+        anchor.dataset.infiniteBound = 'true';
+    }
+
+    function updateLoadMoreContainer(doc) {
+        const currentContainer = document.getElementById('load-more-container');
+        if (!currentContainer) return;
+
+        const newContainer = doc.getElementById('load-more-container');
+
+        // No more pages – remove sentinel and disconnect observer
+        if (!newContainer || newContainer.style.display === 'none') {
+            if (observer) observer.disconnect();
+            currentContainer.remove();
+            return;
+        }
+
+        const newAnchor = newContainer.querySelector('a, button');
+        let currentAnchor = currentContainer.querySelector('a, button');
+
+        // Reuse existing anchor when possible to keep listeners attached
+        if (newAnchor) {
+            if (!currentAnchor) {
+                currentContainer.innerHTML = '';
+                currentContainer.appendChild(document.importNode(newAnchor, true));
+                currentAnchor = currentContainer.querySelector('a, button');
+            } else {
+                if (newAnchor.href) currentAnchor.href = newAnchor.href;
+                if (newAnchor.textContent) currentAnchor.textContent = newAnchor.textContent;
+            }
+
+            currentContainer.style.display = newContainer.style.display || '';
+            bindAnchorClick(currentAnchor);
         }
     }
 
@@ -172,25 +219,14 @@
                 }
             }
 
-            // Replace or remove the load more container with whatever the server returned
-            const newLoadMore = doc.getElementById('load-more-container');
-            const oldLoadMore = document.getElementById('load-more-container');
-            if (oldLoadMore) {
-                if (newLoadMore) {
-                    oldLoadMore.outerHTML = newLoadMore.outerHTML;
-                } else {
-                    oldLoadMore.remove();
-                }
-            }
+            // Update existing load-more sentinel without recreating the observer
+            updateLoadMoreContainer(doc);
 
             // Reinitialize lightbox and animations
             if (window.initLightbox) window.initLightbox();
             if (window.reapplyAnimations) window.reapplyAnimations();
-
-            // Re-bind observer for new container
-            // We allow initInfiniteScroll to be idempotent
-            window.__infiniteScrollInitialized = false;
-            if (window.initInfiniteScroll) window.initInfiniteScroll();
+            // Rebind click handler in case the link was updated
+            bindAnchorClick(findLoadMoreAnchor());
         } catch (err) {
             console.error('Infinite scroll load failed', err);
             if (link) link.textContent = 'Error - Try Again';
@@ -213,14 +249,9 @@
 
         // Add click fallback
         const anchor = container.querySelector('a, button');
-        if (anchor && anchor.tagName.toLowerCase() === 'a') {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadMore();
-            });
-        }
+        bindAnchorClick(anchor);
 
-        const observer = new IntersectionObserver(
+        observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !isLoading) {

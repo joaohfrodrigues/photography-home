@@ -372,7 +372,8 @@ def home_page(
                                 + (f'&q={search_query}' if search_query else ''),
                             ),
                             id='load-more-container',
-                            style='position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0);'
+                            # Keep sentinel in normal flow so it sits after the grid (prevents early triggers)
+                            style='width: 100%; height: 1px; margin-top: 32px; opacity: 0; pointer-events: none;'
                             if has_more
                             else 'display: none;',
                         )
