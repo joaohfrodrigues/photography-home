@@ -54,6 +54,20 @@ def create_navbar(current_page='home'):
                     cls='theme-toggle-btn',
                     onclick='toggleTheme()',
                     style='background: none; border: none; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; color: var(--text-primary); transition: opacity 0.3s;',
+                    title='Toggle theme',
+                ),
+                Button(
+                    NotStr("""
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dev-icon">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                        </svg>
+                    """),
+                    id='dev-mode-toggle',
+                    cls='dev-toggle-btn',
+                    onclick='toggleDevMode()',
+                    title='Toggle Developer Mode',
+                    style='background: none; border: none; cursor: pointer; padding: 0; color: var(--text-primary);',
                 ),
                 cls='navbar-links',
             ),

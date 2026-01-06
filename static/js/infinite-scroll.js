@@ -117,6 +117,7 @@
     }
 
     function appendContent(doc) {
+        let appended = 0;
         const newGallery = doc.getElementById('gallery-grid');
         const gallery = document.getElementById('gallery-grid');
 
@@ -124,7 +125,8 @@
             Array.from(newGallery.children).forEach(child => {
                 gallery.appendChild(child);
             });
-            return;
+            appended += newGallery.children.length;
+            return appended;
         }
 
         const newPhotoGrid = doc.querySelector('.photo-grid') || doc.querySelector('.gallery-grid');
@@ -155,6 +157,7 @@
                 node.style.animationDelay = '0s';
                 columns[idx % numColumns].appendChild(node);
                 idx++;
+                appended++;
             });
         } else {
             Array.from(newPhotoGrid.children).forEach((child, i) => {
@@ -162,12 +165,15 @@
                 node.dataset.order = String(baseOrder + i);
                 node.style.animationDelay = '0s';
                 photoGrid.appendChild(node);
+                appended++;
             });
         }
 
         if (window.updateLightboxPhotos) {
             window.updateLightboxPhotos();
         }
+
+        return appended;
     }
 
     function updateSentinel(doc) {
@@ -225,19 +231,39 @@
         const prevText = link.textContent;
         setLoading(true, link, prevText);
 
+        const targetUrl = link.href;
+        const startTime = performance.now();
+        if (window.logDevEvent) {
+            window.logDevEvent('InfiniteScroll', `GET ${targetUrl}`);
+        }
+
         try {
-            const doc = await fetchNextPage(link.href);
-            appendContent(doc);
+            const doc = await fetchNextPage(targetUrl);
+            const appended = appendContent(doc) || 0;
             const hasMore = updateSentinel(doc);
             refreshUi();
+            const duration = Math.round(performance.now() - startTime);
+            if (window.logDevEvent) {
+                window.logDevEvent('Network', `GET ${targetUrl} (${duration}ms)`);
+                window.logDevEvent(
+                    'InfiniteScroll',
+                    `Appended ${appended} items | total ${document.querySelectorAll('.photo-card, .gallery-item').length}`
+                );
+            }
             if (!hasMore) cleanupInfiniteScroll();
         } catch (err) {
             console.error('Infinite scroll load failed', err);
             if (link) link.textContent = 'Error - Try Again';
+            if (window.logDevEvent) {
+                window.logDevEvent('Error', `Infinite scroll failed: ${err.message}`);
+            }
         } finally {
             state.isLoading = false;
             setLoading(false, link, prevText);
             state.abortController = null;
+            if (window.logDevEvent && !findLoadMoreAnchor()) {
+                window.logDevEvent('InfiniteScroll', 'No further pages available.');
+            }
         }
     }
 

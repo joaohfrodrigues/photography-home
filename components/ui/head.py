@@ -91,6 +91,22 @@ def create_head(
 })();
         """)
         ),
+        # Dev mode class initialization (mirrors theme bootstrap)
+        # Dev mode class initialization - must run before CSS loads
+        Script(
+            NotStr("""
+(function() {
+    try {
+        const devMode = localStorage.getItem('devMode') === 'true';
+        if (devMode) {
+            document.documentElement.classList.add('dev-mode-active');
+        }
+    } catch (e) {
+        // localStorage blocked
+    }
+})();
+            """)
+        ),
         # Open Graph / Social Media
         Meta(property='og:type', content='website'),
         Meta(property='og:title', content=title),
@@ -122,6 +138,8 @@ def create_head(
         Script(structured_data, type='application/ld+json'),
         # Theme toggle functions
         Script(src='/static/js/theme-toggle.js'),
+        # Developer mode overlay / event bus
+        Script(src='/static/js/dev-mode.js'),
         # JavaScript (deferred)
         Script(src='/static/js/sticky-header.js', defer=True),
         Script(src='/static/js/swipe.js', defer=True),

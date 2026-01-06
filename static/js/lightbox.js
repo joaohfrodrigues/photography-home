@@ -231,6 +231,8 @@ function openLightbox(index) {
         console.error('Lightbox element not found!');
         return;
     }
+    const photoTitle = photos[currentPhotoIndex]?.title || 'Photo';
+    if (window.logDevEvent) window.logDevEvent('Lightbox', `Opened: ${photoTitle}`);
     updateLightboxContent();
     lightbox.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -320,6 +322,7 @@ function fetchPhotoDetails(photoId) {
 }
 function closeLightbox() {
     const lightbox = document.getElementById('lightbox');
+    if (window.logDevEvent) window.logDevEvent('Lightbox', 'Closed');
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
 }
@@ -328,6 +331,9 @@ function navigateLightbox(direction) {
     currentPhotoIndex += direction;
     if (currentPhotoIndex < 0) currentPhotoIndex = photos.length - 1;
     if (currentPhotoIndex >= photos.length) currentPhotoIndex = 0;
+    const photoTitle = photos[currentPhotoIndex]?.title || 'Photo';
+    const navDir = direction === 1 ? 'Next' : 'Prev';
+    if (window.logDevEvent) window.logDevEvent('Lightbox', `${navDir}: ${photoTitle}`);
     updateLightboxContent();
 
     // Trigger download for new photo
@@ -352,6 +358,10 @@ function updateLightboxContent() {
         // Once loaded, update the src and fade in
         imgElement.src = photo.url;
         imgElement.dataset.index = currentPhotoIndex;
+        if (window.logDevEvent) {
+            const title = photo.title || 'Photo';
+            window.logDevEvent('Lightbox', `Image loaded: ${title}`);
+        }
         setTimeout(() => {
             imgElement.style.opacity = '1';
         }, 50);

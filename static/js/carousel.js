@@ -55,17 +55,33 @@ document.addEventListener('DOMContentLoaded', function () {
         function nextImage() {
             if (isTransitioning) return;
             currentIndex = (currentIndex + 1) % images.length;
+            const img = images[currentIndex];
+            const alt = img?.getAttribute('alt') || 'Image';
+            if (window.logDevEvent)
+                window.logDevEvent(
+                    'Carousel',
+                    `Next: ${alt} (${currentIndex + 1}/${images.length})`
+                );
             showImage(currentIndex);
         }
 
         function prevImage() {
             if (isTransitioning) return;
             currentIndex = (currentIndex - 1 + images.length) % images.length;
+            const img = images[currentIndex];
+            const alt = img?.getAttribute('alt') || 'Image';
+            if (window.logDevEvent)
+                window.logDevEvent(
+                    'Carousel',
+                    `Prev: ${alt} (${currentIndex + 1}/${images.length})`
+                );
             showImage(currentIndex);
         }
 
         function startCarousel() {
             if (!intervalId) {
+                if (window.logDevEvent)
+                    window.logDevEvent('Carousel', 'Auto-rotate started (4s interval)');
                 intervalId = setInterval(nextImage, 4000);
             }
         }

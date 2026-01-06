@@ -19,12 +19,20 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(searchForm);
         const searchQuery = formData.get('q') || '';
         const order = formData.get('order') || 'popular';
+        const startTime = performance.now();
 
         // Build URL with query params
         const url = new URL(window.location.origin + window.location.pathname);
         if (searchQuery) url.searchParams.set('q', searchQuery);
         url.searchParams.set('order', order);
         url.searchParams.set('page', '1');
+
+        if (window.logDevEvent) {
+            const statement = searchQuery
+                ? `SELECT * FROM photos WHERE title LIKE '%${searchQuery}%' OR tags LIKE '%${searchQuery}%' ORDER BY ${order}`
+                : `SELECT * FROM photos ORDER BY ${order}`;
+            window.logDevEvent('QueryEngine', statement);
+        }
 
         console.log('Fetching:', url.toString());
 
@@ -69,6 +77,11 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update URL without reload
             window.history.pushState({}, '', url.toString());
 
+            if (window.logDevEvent) {
+                const duration = Math.round(performance.now() - startTime);
+                window.logDevEvent('Network', `GET ${url.pathname + url.search} (${duration}ms)`);
+            }
+
             // Reinitialize lightbox if available
             if (window.initLightbox) {
                 window.initLightbox();
@@ -104,6 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Search completed');
         } catch (error) {
             console.error('Search failed:', error);
+            if (window.logDevEvent) {
+                window.logDevEvent('Error', `Search fallback triggered: ${error.message}`);
+            }
             // Fall back to normal form submission
             searchForm.submit();
         }
