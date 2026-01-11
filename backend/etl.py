@@ -86,7 +86,18 @@ def transform_photo(photo: dict) -> dict:
     location = photo.get('location') or {}
     exif = photo.get('exif') or {}
     user = photo.get('user') or {}
-    tags = [tag.get('title', '') for tag in (photo.get('tags') or []) if tag and tag.get('title')]
+    # Tags may arrive as dict objects (Unsplash details) or already flattened
+    # strings (from transformed listings). Normalize to titles only.
+    tags_raw = photo.get('tags') or []
+    tags: list[str] = []
+    for tag in tags_raw:
+        if isinstance(tag, str):
+            if tag:
+                tags.append(tag)
+        elif isinstance(tag, dict):
+            title = tag.get('title')
+            if title:
+                tags.append(title)
 
     transformed = {
         'id': photo['id'],

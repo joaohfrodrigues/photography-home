@@ -41,6 +41,30 @@ def create_footer():
             cls='loading-overlay',
             id='loading-overlay',
         ),
+        # Back to top button
+        Button(
+            '↑',
+            id='back-to-top',
+            cls='back-to-top',
+            onclick="window.scrollTo({top:0, behavior:'smooth'});",
+            style='display: none;',
+        ),
+        Script(
+            NotStr(
+                """
+            (function(){
+                const btn = document.getElementById('back-to-top');
+                if(!btn) return;
+                const toggle = () => {
+                    if (window.scrollY > 240) { btn.style.display = 'flex'; }
+                    else { btn.style.display = 'none'; }
+                };
+                window.addEventListener('scroll', toggle, { passive: true });
+                toggle();
+            })();
+            """
+            )
+        ),
         # Vercel Web Analytics
         *create_analytics(),
     )

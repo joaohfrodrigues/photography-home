@@ -22,6 +22,17 @@ def _print_photo_analysis(photo, title='First Photo Analysis'):
     else:
         print('EXIF content: None or empty')
 
+    # Print tags if available
+    if 'tags' in photo:
+        tags = photo.get('tags')
+        print(f'\nTags: {tags}')
+        if tags:
+            print(f'Number of tags: {len(tags)}')
+            if isinstance(tags, list) and tags and isinstance(tags[0], dict):
+                print(f'First tag structure: {json.dumps(tags[0], indent=2)}')
+    else:
+        print('\nTags: Not available in this endpoint')
+
 
 def _test_user_photos(headers):
     """Test the user photos endpoint"""

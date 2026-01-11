@@ -13,9 +13,12 @@ from backend.db_service import (
     search_photos,
 )
 from components.pages.about import about_page
+from components.pages.blog import blog_list_page, blog_page
 from components.pages.collection_detail import collection_detail_page
 from components.pages.collections import collections_page
+from components.pages.gallery import gallery_page
 from components.pages.home import home_page
+from components.pages.insights import insights_page
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +32,17 @@ def register_page_routes(rt, app):
     """Register all page routes"""
 
     @rt('/')
-    def get_home(order: str = 'popular', page: int = 1, q: str = ''):
-        """Home page with optional search, ordering, and pagination"""
-        # Use search_photos which handles both search and ordering
+    def get_home():
+        """Home page"""
+        return home_page()
+
+    @rt('/gallery')
+    def get_gallery(order: str = 'popular', page: int = 1, q: str = ''):
+        """Gallery page with full photo browsing and infinite scroll"""
         photos, has_more = search_photos(query=q, page=page, per_page=12, order_by=order)
 
-        return home_page(
-            latest_photos=photos, order=order, search_query=q, current_page=page, has_more=has_more
+        return gallery_page(
+            photos=photos, order=order, search_query=q, current_page=page, has_more=has_more
         )
 
     @rt('/collections')
@@ -63,6 +70,21 @@ def register_page_routes(rt, app):
     def get_about():
         """About page"""
         return about_page()
+
+    @rt('/blog')
+    def get_blog_index():
+        """Blog listing page"""
+        return blog_list_page()
+
+    @rt('/blog/{article_slug}')
+    def get_blog(article_slug: str):
+        """Blog article detail page"""
+        return blog_page(article_slug=article_slug)
+
+    @rt('/insights')
+    def get_insights(theme: str = 'dark'):
+        """Insights page with dataset statistics and visualizations"""
+        return insights_page(theme=theme)
 
     @rt('/robots.txt')
     def get_robots():
@@ -103,7 +125,19 @@ def register_page_routes(rt, app):
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
+    <url>
+        <loc>https://joaohfrodrigues.com/gallery</loc>
+        <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
 {collection_urls}
+    <url>
+        <loc>https://joaohfrodrigues.com/blog</loc>
+        <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
     <url>
         <loc>https://joaohfrodrigues.com/about</loc>
         <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>

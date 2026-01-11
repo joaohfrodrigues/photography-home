@@ -8,7 +8,7 @@ on:
             fetch_mode:
                 description: 'Photo fetch mode: batch (fast) or details (full metadata)'
                 required: false
-                default: 'batch'
+                default: 'details'
                 type: choice
                 options:
                     - 'batch'

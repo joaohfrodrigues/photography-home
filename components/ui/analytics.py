@@ -33,8 +33,9 @@ def create_analytics():
             # Safely inline the initialization
         ),
         # Load the Vercel Web Analytics tracking script
+        # Use hosted Vercel analytics script so it works in local dev too
         Script(
-            src='/_vercel/insights/script.js',
+            src='https://va.vercel-scripts.com/v1/script.js',
             defer=True,
             # The script is deferred to not block page rendering
         ),

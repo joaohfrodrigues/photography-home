@@ -29,7 +29,11 @@ def about_page():
                     Div(
                         H1(
                             'About Me',
-                            style='font-size: 2.5rem; margin-bottom: 2.5rem; text-align: center;',
+                            style='font-size: 3rem; margin-bottom: 0.75rem; text-align: center; font-weight: 200; letter-spacing: 0.05em;',
+                        ),
+                        P(
+                            'Data Engineer, photographer, and developer based in Lisbon',
+                            style='text-align: center; color: var(--text-secondary); margin-bottom: 4rem; font-size: 1.15rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;',
                         ),
                         Div(
                             NotStr(html_content),  # Render HTML content from markdown

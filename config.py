@@ -20,9 +20,10 @@ UNSPLASH_USERNAME = os.getenv('UNSPLASH_USERNAME', 'joaohfrodrigues')
 CACHE_DURATION_MINUTES = int(os.getenv('CACHE_DURATION_MINUTES', '30'))
 
 # Which fetch mode to use for Unsplash photo retrieval.
-# 'batch' returns up to 30 photos in a single call; 'details' will (for
-# testing) request detailed info for a single photo via `/photos/{id}`.
-FETCH_MODE = os.getenv('FETCH_MODE', 'batch')
+# 'batch' returns up to 30 photos in a single call; 'details' requests full
+# metadata for each photo via `/photos/{id}`. Default to 'details' now that
+# the daily ETL runs with increased API limits.
+FETCH_MODE = os.getenv('FETCH_MODE', 'details')
 
 # When true, provider validation failures raise an exception during ETL runs.
 # Defaults to false so development runs log and skip invalid items.
