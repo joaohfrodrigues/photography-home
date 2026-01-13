@@ -1,194 +1,119 @@
 ---
 title: Part 1: The Foundation – Hardware & OS Setup
 description: Setting up the hardware and foundation for your home media server
-date: 2024-01-09
+date: 2026-01-13
 series: Home Server Setup
 part: 1
-total_parts: 5
+total_parts: 4
 slug: home-server-part-1-foundation
-draft: true
 ---
 
-This guide shows you how to turn a Raspberry Pi 5 into a powerful home media server. By the end, you will have:
+Building a home server used to mean bulky towers and high electricity bills. Today, NAS Servers and mini PCs are very competitive, can be found for a couple hundred bucks and are easy to setup. Alongside them and as an possibly even cheaper alternative, there's the Raspberry Pi 5. It’s powerful enough to run a media center and stream at 4k, a VPN gateway, and home automation, all while sipping less power than a lightbulb.
 
-1. **Runtipi** running easy-to-manage Docker containers.
-2. **Plex** streaming locally and remotely (without VPN slowing it down).
-3. **A "Magic" VPN Gateway** that lets your TV watch content from other countries (like the US) simply by changing a setting on your TV remote, while the Pi stays secure.
+In this series, we are going to build a **"Set and Forget"** home server. We will cover everything from handling high-speed storage to creating a "Teleportation Gateway" for your Smart TV.
 
----
+**Part 1** focuses on the most critical (and often overlooked) step: **The Foundation.** Getting the storage and permissions right *now* will save you hours of "Permission Denied" errors later.
 
-## Part 1: The Foundation (Storage & Runtipi)
+In the future I might do a similar setup on a proper NAS Server, but as I wanted to start small with the tools I had, saving costs and guaranteeing all my current needs are covered, a Raspberry Pi 5 proved to be enough.
 
-Before installing apps, we need a stable base. This setup assumes you are using a **Raspberry Pi 5** with an **NVMe SSD** for speed and a large **USB HDD** for bulk storage.
+## 🛠 The Hardware Stack
 
-### 1. Mount Your Drives Permanently
+We aren't using SD cards for storage anymore. They are slow and prone to corruption.
 
-Linux drives need to be mounted to a specific folder to be visible to apps.
+* **Computation:** Raspberry Pi 5 (4GB or 8GB).
+* **Storage:** NVMe SSD (M.2) connected via a USB 3.0 adapter or a dedicated hat. I used [this one (~15€)](https://shop.pimoroni.com/products/nvme-base?variant=41313839448147) from Pimoroni.
+  > If you want to go a step further on storage configuration, check [these SATA hats](https://radxa.com/products/accessories/penta-sata-hat/) that support up to 5 SSDs.
+* **OS Drive:** A small, high-quality SD card (just for booting the OS).
 
-#### **Create mount points:**
+## Step 1: Headless OS Installation
 
-```bash
-sudo mkdir -p /mnt/nvme
-sudo mkdir -p /mnt/hdd
+We don't need a monitor or keyboard. We will set this up remotely.
+
+1. Download the **Raspberry Pi Imager**.
+2. Choose **Raspberry Pi OS Lite (64-bit)**. *We don't need a desktop interface slowing us down.*
+3. **Advanced configuration:** Click the "Settings" (Gear icon) before writing.
+    * **Hostname:** `homeserver` (or whatever you like).
+    * **Enable SSH:** Use password authentication.
+    * **Set Username/Password:** (e.g., `pi` / `yourpassword`).
+    * **Configure Wireless LAN:** Enter your WiFi details (or just plug in Ethernet, which is better).
+4. Write to the SD card, plug it into the Pi, and power it up.
+
+## Step 2: Make sure storage is mounted
+
+Unfortunately the storage drives we will use may not be automatically mounted. If you don't mount the drive permanently, your server will break the next time it reboots. To make sure the drive is mounted, we will use an ssh connection to the Raspberry Pi.
+
+### Finding the drive and allocating the directory
+
+``` bash
+ssh pi@homeserver.local
+# 1. Find the drive
+# You are looking for your large SSD (usually named `sda` or `nvme0n1`).
+lsblk
+# 2. Format it (If new) *Warning: This wipes the drive.*
+sudo mkfs.ext4 /dev/sda1
+# 3. Create the Permanent Home
+# We need a folder where this drive will live.
+sudo mkdir -p /media/storage
 ```
 
-#### **Find your Drive UUIDs:**
+### Mounting
 
-   Run `lsblk -f` and note the UUIDs for your NVMe and HDD partitions.
+We need to tell Linux to mount this drive automatically at boot.
 
-#### **Edit the Startup File:**
-
-```bash
+``` bash
+# First, get the drive's unique ID (UUID):
+sudo blkid
+# Copy the UUID string (e.g., `1234-5678-ABCD`), and edit the fstab file.
 sudo nano /etc/fstab
+# Add this line at the bottom
+UUID=YOUR-UUID-HERE  /media/storage  ext4  defaults,noatime  0  2
 ```
 
-Add these lines to the bottom (replace `UUID_HERE` with your actual IDs):
+  > **Why `noatime`?** It improves performance by telling the OS not to write a timestamp every time you read a file.
 
-```ini
-# NVMe Drive (Fast)
-UUID=YOUR_NVME_UUID  /mnt/nvme  ext4  defaults,noatime  0  2
+Test it immediately (do not reboot yet!):
 
-# USB HDD (Bulk Storage - NTFS)
-UUID=YOUR_HDD_UUID   /mnt/hdd   ntfs-3g  defaults,nofail,uid=1000,gid=1000,umask=000  0  0
-```
-
-#### **Mount everything:**
-
-```bash
+``` bash
 sudo mount -a
-
 ```
 
-### 2. Install Runtipi
+If you get no errors, you are safe. Below you find a screenshot of my mounted drives.
 
-Runtipi makes managing Docker containers incredibly easy.
+![Mounted drives](/content/blog/home-server/images/part-1-mounted-drives.png)
 
-```bash
+## Step 3: The Common Blindspot (Permissions)
+
+This is where 90% of home server projects fail.
+By default, the folder `/media/storage` is owned by `root`. But your apps (RunTipi, Plex, etc.) usually run as the user `pi` (UID 1000).
+
+If you skip this, your apps will crash with "Permission Denied" when trying to save files.
+
+**The Fix:**
+
+``` bash
+sudo chown -R 1000:1000 /media/storage
+sudo chmod -R 775 /media/storage
+```
+
+* **`chown -R 1000:1000`**: This hands ownership of the drive (and everything inside it) to the standard user (UID 1000).
+* **`chmod -R 775`**: This ensures the user and group have full Read/Write access.
+
+## Step 4: Installing the Manager (RunTipi)
+
+We could write `docker-compose` files manually, but **RunTipi** makes managing a home server incredibly easy. It handles updates, reverse proxies, and a beautiful dashboard for us.
+
+Install it with one command:
+
+``` bash
 curl -L https://runtipi.io/install | bash
-
 ```
 
-Once installed, visit `http://YOUR_PI_IP` (e.g., `192.168.1.83`) in your browser to set up your dashboard.
+Once finished, open your browser and go to `http://homeserver.local`. You will be greeted by your new dashboard.
 
----
+![Runtipi Dashboard](/content/blog/home-server/images/part-1-runtipi.png)
 
-## Part 2: Configuring Plex (The Right Way)
+## Next Steps
 
-Many guides fail here by letting Docker hide your storage. We will map your drives explicitly so Plex can see everything.
+Your foundation is rock solid. You have a high-speed NVMe drive that automatically mounts on boot, and—crucially—your applications actually have permission to write to it.
 
-### 1. Install Plex
-
-In the Runtipi App Store, find **Plex** and click Install.
-
-* **Open Port:** ON (Important for remote access)
-* **Expose to Local Network:** ON
-
-### 2. The "Trap Door" Fix
-
-By default, Runtipi points Plex to the SD card. We need to point it to your NVMe/HDD.
-
-#### **Stop Plex** via the Runtipi dashboard
-
-#### **Edit the config via SSH:**
-
-```bash
-sudo nano ~/runtipi/app-data/plex/docker-compose.yml
-```
-
-#### **Update the `volumes` section:**
-
-Remove the default `${ROOT_FOLDER_HOST}...` line and replace it with your real drives:
-
-```yaml
-volumes:
-  - ${APP_DATA_DIR}/data/config:/config
-  - ${APP_DATA_DIR}/data/transcode:/transcode
-  # - ${ROOT_FOLDER_HOST}/media/data:/media  <-- DELETE THIS LINE
-  - /mnt/nvme:/media/nvme
-  - /mnt/hdd:/media/hdd
-```
-
-#### **Start Plex** again via the dashboard
-
-Now, inside Plex, you can add libraries by browsing to `/media/nvme` or `/media/hdd`.
-
----
-
-## Part 3: The "Hybrid" VPN Gateway
-
-This is the killer feature. We will route the Raspberry Pi's traffic through a secure VPN (like ProtonVPN) **BUT** we will poke two specific holes in it:
-
-1. **Hole 1:** Allow Plex to bypass the VPN so remote streaming is fast.
-2. **Hole 2:** Create a bridge so your TV can use the VPN to watch foreign content.
-
-### 1. Install WireGuard
-
-```bash
-sudo apt install wireguard openresolv
-```
-
-### 2. Configure the Interface
-
-Create the config file:
-
-```bash
-sudo nano /etc/wireguard/wg0.conf
-```
-
-Paste this configuration (Use your own PrivateKey and Address from your VPN provider):
-
-```ini
-[Interface]
-PrivateKey = YOUR_PRIVATE_KEY
-Address = 10.2.0.2/32
-DNS = 10.2.0.1
-MTU = 1280  # Prevents "Connected but no internet" issues on TV
-
-# --- THE HYBRID RULES ---
-
-# 1. Split Tunnel (The Plex Bypass)
-# Routes traffic from the Pi's own IP (e.g. .83) directly to the internet, skipping VPN.
-PostUp = ip rule add from 192.168.1.83 table main priority 100
-PostDown = ip rule del from 192.168.1.83 table main priority 100
-
-# 2. Allow Forwarding (The "Docker Fix")
-# Forces the firewall open so other devices (TV) can talk to the VPN.
-PostUp = iptables -I FORWARD -j ACCEPT
-PostDown = iptables -D FORWARD -j ACCEPT
-
-# 3. NAT (Gateway Mode)
-# Masquerades traffic so the TV looks like it's the Pi.
-PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE
-PostDown = iptables -t nat -D POSTROUTING -o %i -j MASQUERADE
-
-```
-
-### 3. Start the VPN
-
-```bash
-sudo systemctl enable --now wg-quick@wg0
-```
-
-### 4. Enable Plex Remote Access
-
-1. Go to your Router's Admin Page.
-2. **Port Forward** TCP Port `32400` to your Pi's IP (`192.168.1.83`).
-3. In Plex Settings > Remote Access:
-   * Check **"Manually specify public port"** (32400).
-   * Click Retry. It should turn Green!
-
----
-
-## Part 4: How to Use It (The TV Trick)
-
-Now you have a "Magic Switch" for your TV.
-
-* **To Watch Local TV (No VPN):**
-  Set your TV's Network Settings to **Automatic (DHCP)**.
-* **To Watch US Content (VPN):**
-  Set your TV's Network Settings to **Manual**:
-  * **IP:** `192.168.1.150` (Unique IP)
-  * **Gateway:** `192.168.1.83` (Your Pi's IP)
-  * **DNS:** `1.1.1.1`
-
-Enjoy your new Super-Server!
+In **Part 2**, we will turn this quiet server into a media powerhouse by setting up **Plex**, handling hardware transcoding on the Pi 5, and automating your media library management.

@@ -36,6 +36,7 @@
 .markdown-content p {
     margin-bottom: 1.5rem;
     font-weight: 300;
+    text-align: justify;
 }
 
 .markdown-content strong,
@@ -98,7 +99,6 @@
 .markdown-content a {
     color: var(--text-primary);
     text-decoration: underline;
-    margin-right: 1.5rem;
     transition: opacity 0.3s ease;
 }
 

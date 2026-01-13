@@ -71,7 +71,12 @@ repos:
       rev: v0.42.0
       hooks:
           - id: markdownlint
-            args: [--fix]
+            args: [--fix, --config, .markdownlintrc.json]
+            exclude: |
+                (?x)^(
+                  content/blog/.*|
+                  README\.md
+                )$
 
     # HTML validation
     - repo: https://github.com/Lucas-C/pre-commit-hooks-markup

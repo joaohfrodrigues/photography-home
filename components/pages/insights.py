@@ -96,42 +96,38 @@ def insights_page(theme: str = 'dark'):
                         ),
                         P(
                             'Explore statistics and trends from my photography collection',
-                            style='font-size: 1.15rem; color: var(--text-secondary); text-align: center; margin-bottom: 3.5rem;',
+                            style='text-align: center; color: var(--text-secondary); margin-bottom: 4rem; font-size: 1.15rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;',
                         ),
                         cls='container',
-                        style='max-width: 1000px; margin: 0 auto; padding: 7rem 2rem 3rem;',
+                        style='max-width: 1200px; margin: 0 auto; padding: 8rem 2rem 4rem;',
                     ),
-                    style='min-height: 20vh; display: flex; align-items: center;',
                 ),
                 Section(
                     Div(
-                        Div(
-                            create_stat_card(
-                                'Total Photos',
-                                f"{stats['total_photos']:,.0f}",
-                                description='Across all shoots',
-                            ),
-                            create_stat_card(
-                                'Collections',
-                                f"{stats['total_collections']:,.0f}",
-                                description='Organized photo series',
-                            ),
-                            create_stat_card(
-                                'Locations',
-                                f"{stats.get('total_locations', len(stats.get('top_locations', {}))):,.0f}",
-                                description='Unique places captured',
-                            ),
-                            create_stat_card(
-                                'Total Views',
-                                f"{stats['total_views']:,.0f}",
-                                description='Community engagement',
-                            ),
-                            cls='stats-grid',
+                        create_stat_card(
+                            'Total Photos',
+                            f"{stats['total_photos']:,.0f}",
+                            description='Across all shoots',
                         ),
-                        cls='container',
-                        style='max-width: 1200px; margin: 0 auto; padding: 2rem;',
+                        create_stat_card(
+                            'Collections',
+                            f"{stats['total_collections']:,.0f}",
+                            description='Organized photo series',
+                        ),
+                        create_stat_card(
+                            'Locations',
+                            f"{stats.get('total_locations', len(stats.get('top_locations', {}))):,.0f}",
+                            description='Unique places captured',
+                        ),
+                        create_stat_card(
+                            'Total Views',
+                            f"{stats['total_views']:,.0f}",
+                            description='Community engagement',
+                        ),
+                        cls='stats-grid',
                     ),
-                    style='padding: 2rem 0 3rem;',
+                    cls='container',
+                    style='max-width: 1200px; margin: 0 auto; padding: 2rem;',
                 ),
                 Section(
                     Div(

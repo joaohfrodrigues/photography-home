@@ -5,6 +5,14 @@ from pathlib import Path
 
 import markdown
 
+MARKDOWN_EXTENSIONS = ['fenced_code', 'codehilite', 'tables']
+
+
+def render_markdown(markdown_content: str) -> str:
+    """Render markdown to HTML with fenced code support."""
+    html_content = markdown.markdown(markdown_content, extensions=MARKDOWN_EXTENSIONS)
+    return add_external_link_attributes(html_content)
+
 
 def parse_frontmatter(content: str) -> tuple[dict, str]:
     """Parse YAML frontmatter from markdown content."""
@@ -60,10 +68,7 @@ def load_markdown_page(page_name: str) -> tuple[dict, str]:
         content = f.read()
 
     metadata, markdown_content = parse_frontmatter(content)
-    html_content = markdown.markdown(markdown_content)
-    html_content = add_external_link_attributes(html_content)
-
-    return metadata, html_content
+    return metadata, render_markdown(markdown_content)
 
 
 def load_blog_article(article_slug: str) -> tuple[dict, str]:
@@ -87,9 +92,7 @@ def load_blog_article(article_slug: str) -> tuple[dict, str]:
 
         # Match by slug in frontmatter, or fallback to filename stem
         if metadata.get('slug') == article_slug or article_path.stem == article_slug:
-            html_content = markdown.markdown(markdown_content)
-            html_content = add_external_link_attributes(html_content)
-            return metadata, html_content
+            return metadata, render_markdown(markdown_content)
 
     msg = f'Blog article not found: {article_slug}'
     raise FileNotFoundError(msg)
