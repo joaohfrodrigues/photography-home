@@ -192,7 +192,7 @@ def get_all_collections() -> list[dict]:
                     c.cover_photo_url
                 ) AS cover_photo_url
             FROM collections c
-            ORDER BY COALESCE(c.published_at, c.updated_at) DESC
+            ORDER BY c.updated_at DESC
         """)
 
         rows = cursor.fetchall()
