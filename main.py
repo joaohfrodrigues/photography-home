@@ -51,12 +51,11 @@ def create_app():
     register_api_routes(rt)
 
     logger.info('Application initialized successfully')
-    return app, rt
+    return app
 
 
 # Create app instance
-app, rt = create_app()
-
+app = create_app()
 
 if __name__ == '__main__':
     import uvicorn
