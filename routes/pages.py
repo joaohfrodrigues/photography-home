@@ -153,7 +153,6 @@ def register_page_routes(rt, app):
         return Response(status_code=204)
 
     # Custom error pages
-    @app.exception_handler(404)
     async def not_found(request, exc):
         """Custom 404 page"""
         logger.warning(f'404 error: {request.url.path}')
@@ -175,7 +174,6 @@ def register_page_routes(rt, app):
         )
         return HTMLResponse(ft_to_html(component), status_code=404)
 
-    @app.exception_handler(500)
     async def server_error(request, exc):
         """Custom 500 page"""
         logger.error(f'500 error: {exc}')
@@ -196,3 +194,6 @@ def register_page_routes(rt, app):
             ),
         )
         return HTMLResponse(ft_to_html(component), status_code=500)
+
+    app.add_exception_handler(404, not_found)
+    app.add_exception_handler(500, server_error)

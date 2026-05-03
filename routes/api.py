@@ -19,6 +19,11 @@ def register_api_routes(rt):
     - GET /collection/{id} with ?q=search&page=1
     """
 
+    @rt('/_vercel/insights/view')
+    async def post(request):
+        """No-op handler for Vercel Analytics in local dev (Vercel handles this in production)"""
+        return Response(status_code=202)
+
     @rt('/api/trigger-download')
     def get(photo_id: str = '', download_location: str = ''):
         """API endpoint to trigger Unsplash download event"""
