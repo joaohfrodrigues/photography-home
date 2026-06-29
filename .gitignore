@@ -215,6 +215,7 @@ data/*.db-wal
 .next/
 out/
 node_modules/
+tsconfig.tsbuildinfo
 .env.local
 .env.*.local
 npm-debug.log*
