@@ -20,39 +20,38 @@ export default async function PhotographyPage() {
       <header className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight mb-2">Photography</h1>
         <p className="text-muted-foreground text-lg">
-          {photos.length > 0
-            ? `${photos[0]?.photographer.name ?? 'João Rodrigues'} — street, travel, and portrait.`
-            : 'Street, travel, and portrait photography.'}
+          João Rodrigues — street, travel, and portrait.
         </p>
       </header>
 
-      {/* Collections row */}
+      {/* Collections — the primary way to browse */}
       {collections.length > 0 && (
-        <section className="mb-10" aria-label="Collections">
+        <section className="mb-12" aria-label="Collections">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4">
             Collections
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {collections.map((col) => (
               <Link
                 key={col.id}
                 href={`/photography/${col.slug}`}
-                className="group shrink-0 w-44 flex flex-col gap-2"
+                className="group flex flex-col gap-2"
               >
-                <div className="relative h-28 overflow-hidden rounded-md bg-muted">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
                   {col.coverPhotoUrl && (
                     <Image
                       src={col.coverPhotoUrl}
                       alt={col.title}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="176px"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     />
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium leading-snug group-hover:underline">{col.title}</p>
-                  <p className="text-xs text-muted-foreground">{col.totalPhotos} photos</p>
+                  <p className="font-medium leading-snug group-hover:underline">{col.title}</p>
+                  <p className="text-sm text-muted-foreground">{col.totalPhotos} photos</p>
                 </div>
               </Link>
             ))}
@@ -60,7 +59,13 @@ export default async function PhotographyPage() {
         </section>
       )}
 
-      <GalleryClient initialPhotos={photos} initialHasMore={hasMore} />
+      {/* All photos — secondary, searchable feed */}
+      <section aria-label="All photos">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+          All photos
+        </h2>
+        <GalleryClient initialPhotos={photos} initialHasMore={hasMore} />
+      </section>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useTransition } from 'react'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { PhotoGrid } from './photo-grid'
 import { Lightbox } from './lightbox'
 import type { Photo, SortOrder } from '@/lib/photos'
@@ -18,7 +18,7 @@ export function GalleryClient({ initialPhotos, initialHasMore, collectionId }: P
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortOrder>('popular')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
   const sentinelRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isLoadingMore = useRef(false)
@@ -51,14 +51,14 @@ export function GalleryClient({ initialPhotos, initialHasMore, collectionId }: P
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       pageRef.current = 1
-      startTransition(() => { fetchPhotos({ q: value, s: sort, p: 1, append: false }) })
+      startTransition(async () => { await fetchPhotos({ q: value, s: sort, p: 1, append: false }) })
     }, 350)
   }
 
   const handleSortChange = (value: SortOrder) => {
     setSort(value)
     pageRef.current = 1
-    startTransition(() => { fetchPhotos({ q: query, s: value, p: 1, append: false }) })
+    startTransition(async () => { await fetchPhotos({ q: query, s: value, p: 1, append: false }) })
   }
 
   // Infinite scroll via IntersectionObserver.
@@ -102,7 +102,6 @@ export function GalleryClient({ initialPhotos, initialHasMore, collectionId }: P
         </div>
 
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={16} className="text-muted-foreground" />
           <div className="flex rounded-md border border-input overflow-hidden text-sm">
             {(['popular', 'recent'] as SortOrder[]).map((s) => (
               <button
@@ -123,7 +122,9 @@ export function GalleryClient({ initialPhotos, initialHasMore, collectionId }: P
       </div>
 
       {/* Grid */}
-      <PhotoGrid photos={photos} onPhotoClick={setLightboxIndex} />
+      <div className={`transition-opacity duration-200 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+        <PhotoGrid photos={photos} onPhotoClick={setLightboxIndex} />
+      </div>
 
       {/* Infinite scroll sentinel — rendered only while more pages exist */}
       {hasMore && <div ref={sentinelRef} className="h-1" aria-hidden />}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import type { TouchEvent } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight, Camera, MapPin, ExternalLink } from 'lucide-react'
 import type { Photo } from '@/lib/photos'
@@ -25,6 +26,20 @@ function ExifRow({ label, value }: { label: string; value: string | null }) {
 export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const photo = photos[index]
   const closeRef = useRef<HTMLButtonElement>(null)
+  const touchStartX = useRef<number | null>(null)
+
+  function onTouchStart(e: TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  function onTouchEnd(e: TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 50) return
+    if (dx < 0 && index < photos.length - 1) onNavigate(index + 1)
+    if (dx > 0 && index > 0) onNavigate(index - 1)
+  }
 
   useEffect(() => {
     closeRef.current?.focus()
@@ -100,7 +115,11 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image */}
-        <div className="flex-1 flex items-center justify-center p-4 lg:p-12 min-h-0">
+        <div
+          className="flex-1 flex items-center justify-center p-4 lg:p-12 min-h-0"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           <div className="relative max-w-full max-h-[70vh] lg:max-h-full">
             <Image
               src={photo.url}

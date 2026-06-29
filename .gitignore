@@ -223,3 +223,7 @@ yarn-debug.log*
 yarn-error.log*
 .vercel
 !src/lib/
+
+# Playwright
+/test-results/
+/playwright-report/
