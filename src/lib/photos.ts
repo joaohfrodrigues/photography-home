@@ -62,6 +62,17 @@ export interface Collection {
 
 export type SortOrder = 'popular' | 'recent'
 
+/**
+ * Collection titles are stored with a short year prefix, e.g. "23' Munich/Vienna".
+ * Render them as "Munich/Vienna · 2023" for clarity. Titles that don't match the
+ * prefix pattern are returned unchanged.
+ */
+export function formatCollectionTitle(title: string): string {
+  const match = title.match(/^(\d{2})'\s*(.+)$/)
+  if (!match) return title
+  return `${match[2]} · 20${match[1]}`
+}
+
 function orderClause(sort: SortOrder, prefix = ''): string {
   const p = prefix ? `${prefix}.` : ''
   return sort === 'recent' ? `${p}created_at DESC` : `${p}views DESC, ${p}created_at DESC`
@@ -200,7 +211,7 @@ export function getAllCollections(): Collection[] {
     .all() as RawRow[]
   return rows.map((r) => ({
     id: r.id as string,
-    title: r.title as string,
+    title: formatCollectionTitle(r.title as string),
     slug: (r.slug as string) || '',
     description: (r.description as string) || '',
     totalPhotos: (r.total_photos as number) || 0,
@@ -215,7 +226,7 @@ export function getCollectionBySlug(slug: string): Collection | null {
   if (!row) return null
   return {
     id: row.id as string,
-    title: row.title as string,
+    title: formatCollectionTitle(row.title as string),
     slug: (row.slug as string) || slug,
     description: (row.description as string) || '',
     totalPhotos: (row.total_photos as number) || 0,
