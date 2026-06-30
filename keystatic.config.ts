@@ -28,6 +28,41 @@ export default config({
   },
 
   collections: {
+    projects: collection({
+      label: 'Projects',
+      slugField: 'title',
+      path: 'content/projects/*',
+      format: { contentField: 'body' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        description: fields.text({ label: 'Description', multiline: true }),
+        coverImage: fields.image({
+          label: 'Cover Image',
+          directory: 'public/images/projects',
+          publicPath: '/images/projects/',
+        }),
+        status: fields.select({
+          label: 'Status',
+          options: [
+            { label: 'Active', value: 'active' },
+            { label: 'Archived', value: 'archived' },
+          ],
+          defaultValue: 'active',
+        }),
+        order: fields.number({ label: 'Display Order', defaultValue: 99 }),
+        body: fields.document({
+          label: 'Introduction',
+          formatting: true,
+          dividers: true,
+          links: true,
+          images: {
+            directory: 'public/images/projects',
+            publicPath: '/images/projects/',
+          },
+        }),
+      },
+    }),
+
     articles: collection({
       label: 'Articles',
       slugField: 'title',
@@ -37,9 +72,9 @@ export default config({
         title: fields.slug({ name: { label: 'Title' } }),
         publishedAt: fields.date({ label: 'Published at' }),
         description: fields.text({ label: 'Description', multiline: true }),
-        tags: fields.array(fields.text({ label: 'Tag' }), {
-          label: 'Tags',
-          itemLabel: (props) => props.value,
+        project: fields.text({
+          label: 'Project',
+          description: 'Slug of the project this article belongs to (leave empty for standalone)',
         }),
         draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
         body: fields.document({

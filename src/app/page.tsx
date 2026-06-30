@@ -74,7 +74,11 @@ export default async function HomePage() {
             {articles.map((article) => (
               <li key={article.slug}>
                 <Link
-                  href={`/writing/${article.slug}`}
+                  href={
+                    article.project
+                      ? `/writing/projects/${article.project}/${article.slug}`
+                      : `/writing/${article.slug}`
+                  }
                   className="group flex flex-col gap-1 py-4"
                 >
                   {article.publishedAt && (

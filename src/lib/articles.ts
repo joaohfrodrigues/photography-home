@@ -5,7 +5,7 @@ export type ArticleSummary = {
   title: string
   publishedAt: string
   description: string
-  tags: readonly string[]
+  project: string
   draft: boolean
 }
 
@@ -25,11 +25,10 @@ function entryTitle(raw: unknown): string {
   return ''
 }
 
-export async function getPublishedArticles(tag?: string): Promise<ArticleSummary[]> {
+export async function getPublishedArticles(): Promise<ArticleSummary[]> {
   const entries = await getAllEntries()
   return entries
     .filter((e) => !e.entry.draft)
-    .filter((e) => !tag || e.entry.tags.includes(tag))
     .sort((a, b) =>
       (b.entry.publishedAt ?? '').localeCompare(a.entry.publishedAt ?? '')
     )
@@ -38,24 +37,28 @@ export async function getPublishedArticles(tag?: string): Promise<ArticleSummary
       title: entryTitle(e.entry.title),
       publishedAt: e.entry.publishedAt ?? '',
       description: e.entry.description,
-      tags: e.entry.tags,
+      project: e.entry.project ?? '',
       draft: e.entry.draft,
     }))
 }
 
-export async function getAllTags(): Promise<string[]> {
-  const entries = await getAllEntries()
-  const tags = new Set<string>()
-  for (const e of entries) {
-    if (!e.entry.draft) {
-      for (const tag of e.entry.tags) tags.add(tag)
-    }
-  }
-  return Array.from(tags).sort()
+export async function getStandaloneArticles(): Promise<ArticleSummary[]> {
+  const articles = await getPublishedArticles()
+  return articles.filter((a) => !a.project)
+}
+
+export async function getProjectArticles(projectSlug: string): Promise<ArticleSummary[]> {
+  const articles = await getPublishedArticles()
+  return articles.filter((a) => a.project === projectSlug)
 }
 
 export async function getAllSlugs(): Promise<string[]> {
   return reader.collections.articles.list()
+}
+
+export async function getStandaloneSlugs(): Promise<string[]> {
+  const entries = await reader.collections.articles.all()
+  return entries.filter((e) => !e.entry.project).map((e) => e.slug)
 }
 
 export async function getArticle(slug: string): Promise<ArticleDetail | null> {
@@ -71,19 +74,21 @@ export async function getArticle(slug: string): Promise<ArticleDetail | null> {
     title: entryTitle(entry.title),
     publishedAt: entry.publishedAt ?? '',
     description: entry.description,
-    tags: entry.tags,
+    project: entry.project ?? '',
     draft: entry.draft,
     body,
     readingTime,
   }
 }
 
-export async function getAdjacentArticles(slug: string) {
-  const published = await getPublishedArticles()
-  const idx = published.findIndex((a) => a.slug === slug)
+export async function getAdjacentArticles(slug: string, projectSlug?: string) {
+  const pool = projectSlug
+    ? await getProjectArticles(projectSlug)
+    : await getStandaloneArticles()
+  const idx = pool.findIndex((a) => a.slug === slug)
   return {
-    prev: idx < published.length - 1 ? published[idx + 1] : null,
-    next: idx > 0 ? published[idx - 1] : null,
+    prev: idx < pool.length - 1 ? pool[idx + 1] : null,
+    next: idx > 0 ? pool[idx - 1] : null,
   }
 }
 

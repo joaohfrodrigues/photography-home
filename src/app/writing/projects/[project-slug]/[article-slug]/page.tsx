@@ -1,21 +1,34 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getAdjacentArticles, getArticle, getStandaloneSlugs } from '@/lib/articles'
+import { getArticle, getAdjacentArticles, getAllSlugs } from '@/lib/articles'
+import { getProject, getAllProjectSlugs } from '@/lib/projects'
 import { ArticleBody } from '@/components/article-body'
 import type { Metadata } from 'next'
 
 export async function generateStaticParams() {
-  const slugs = await getStandaloneSlugs()
-  return slugs.map((slug) => ({ slug }))
+  const [articleSlugs, projectSlugs] = await Promise.all([
+    getAllSlugs(),
+    getAllProjectSlugs(),
+  ])
+  // We need to pair each article with its project — read all articles
+  const { reader } = await import('@/lib/reader')
+  const entries = await reader.collections.articles.all()
+
+  return entries
+    .filter((e) => e.entry.project && projectSlugs.includes(e.entry.project))
+    .map((e) => ({
+      'project-slug': e.entry.project as string,
+      'article-slug': e.slug,
+    }))
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ 'project-slug': string; 'article-slug': string }>
 }): Promise<Metadata> {
-  const { slug } = await params
-  const article = await getArticle(slug)
+  const { 'article-slug': articleSlug } = await params
+  const article = await getArticle(articleSlug)
   if (!article) return {}
   return {
     title: `${article.title} — João Rodrigues`,
@@ -23,29 +36,37 @@ export async function generateMetadata({
   }
 }
 
-export default async function ArticlePage({
+export default async function ProjectArticlePage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ 'project-slug': string; 'article-slug': string }>
 }) {
-  const { slug } = await params
-  const [article, adjacent] = await Promise.all([
-    getArticle(slug),
-    getAdjacentArticles(slug),
+  const { 'project-slug': projectSlug, 'article-slug': articleSlug } = await params
+
+  const [article, project, adjacent] = await Promise.all([
+    getArticle(articleSlug),
+    getProject(projectSlug),
+    getAdjacentArticles(articleSlug, projectSlug),
   ])
 
-  if (!article || article.draft || article.project) notFound()
+  if (!article || article.draft || !project || article.project !== projectSlug) notFound()
 
   return (
     <main className="container max-w-3xl py-12">
-      <div className="mb-2">
-        <Link
-          href="/writing"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Writing
+      <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/writing" className="hover:text-foreground transition-colors">
+          Writing
         </Link>
-      </div>
+        <span>/</span>
+        <Link
+          href={`/writing/projects/${projectSlug}`}
+          className="hover:text-foreground transition-colors"
+        >
+          {project.title}
+        </Link>
+        <span>/</span>
+        <span className="text-foreground">{article.title}</span>
+      </nav>
 
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-3">{article.title}</h1>
@@ -70,7 +91,7 @@ export default async function ArticlePage({
         <div>
           {adjacent.prev && (
             <Link
-              href={`/writing/${adjacent.prev.slug}`}
+              href={`/writing/projects/${projectSlug}/${adjacent.prev.slug}`}
               className="group flex flex-col gap-1"
             >
               <span className="text-xs text-muted-foreground">← Previous</span>
@@ -83,7 +104,7 @@ export default async function ArticlePage({
         <div className="text-right">
           {adjacent.next && (
             <Link
-              href={`/writing/${adjacent.next.slug}`}
+              href={`/writing/projects/${projectSlug}/${adjacent.next.slug}`}
               className="group flex flex-col gap-1 items-end"
             >
               <span className="text-xs text-muted-foreground">Next →</span>
